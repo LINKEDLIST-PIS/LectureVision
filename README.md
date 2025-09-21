@@ -1,2 +1,2 @@
 # LectureVision
-Real-time classroom occupancy detection using YOLOv8 and mobile push notifications.
+Real-time classroom occupancy detection using YOLOv11 and mobile push notifications.
