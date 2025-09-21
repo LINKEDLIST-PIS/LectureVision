@@ -13,3 +13,4 @@ class Upload(Base):
     abs_path = Column(String(500), nullable=False)
     people_count = Column(Integer, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    idempotency_key = Column(String(64), unique=True, nullable=True)
