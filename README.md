@@ -27,10 +27,14 @@ app/
  ├── models.py
  ├── schemas.py
  ├── settings.py
+ ├── security.py
+ ├── hmac_utils.py
  ├── services/
  │    ├── init.py
  │    ├── storage.py
  │    └── uploads.py
+ ├── middleware/
+ │    ├── log_exceptions.py
 alembic/
  ├── env.py
  ├── script.py.mako
@@ -88,6 +92,28 @@ alembic downgrade -1
 
 ---
 
+## 📌 주요 변경점
+1. **인증/보안 요구사항 추가**
+   - `Authorization: Bearer <토큰>` 헤더 필수
+   - `X-Timestamp`, `X-Signature` HMAC 서명 필수
+   - `Idempotency-Key` 헤더로 중복 업로드 방지
+
+2. **요청 제한**
+   - 초당 5회 요청 제한(토큰/IP 기준) 적용됨
+
+3. **파일 검증**
+   - 최대 10MB
+   - `image/jpeg`, `image/png`만 허용
+
+4. **응답/에러 로깅**
+   - 업로드 시간, people_count, 처리 지연(ms) 기록
+   - 예외 발생 시 요청 메타데이터와 함께 로깅
+
+5. **비동기 처리**
+   - 업로드 후 알림 발송·추가 분석은 BackgroundTasks로 비동기 실행
+
+---
+
 📡 API 명세
 `
 ---
@@ -115,6 +141,10 @@ headingLevel: 2
 
 > Scroll down for code samples, example requests and responses. Select a language for code samples from the tabs above or the mobile navigation menu.
 
+# Authentication
+
+- HTTP Authentication, scheme: bearer 
+
 <h1 id="fastapi-default">Default</h1>
 
 ## upload_file_upload_post
@@ -127,7 +157,11 @@ headingLevel: 2
 # You can also use wget
 curl -X POST /upload \
   -H 'Content-Type: multipart/form-data' \
-  -H 'Accept: application/json'
+  -H 'Accept: application/json' \
+  -H 'x-timestamp: string' \
+  -H 'x-signature: string' \
+  -H 'Idempotency-Key: string' \
+  -H 'Authorization: Bearer {access-token}'
 
 ```
 
@@ -136,6 +170,9 @@ POST /upload HTTP/1.1
 
 Content-Type: multipart/form-data
 Accept: application/json
+x-timestamp: string
+x-signature: string
+Idempotency-Key: string
 
 ```
 
@@ -146,7 +183,11 @@ const inputBody = '{
 }';
 const headers = {
   'Content-Type':'multipart/form-data',
-  'Accept':'application/json'
+  'Accept':'application/json',
+  'x-timestamp':'string',
+  'x-signature':'string',
+  'Idempotency-Key':'string',
+  'Authorization':'Bearer {access-token}'
 };
 
 fetch('/upload',
@@ -169,7 +210,11 @@ require 'json'
 
 headers = {
   'Content-Type' => 'multipart/form-data',
-  'Accept' => 'application/json'
+  'Accept' => 'application/json',
+  'x-timestamp' => 'string',
+  'x-signature' => 'string',
+  'Idempotency-Key' => 'string',
+  'Authorization' => 'Bearer {access-token}'
 }
 
 result = RestClient.post '/upload',
@@ -184,7 +229,11 @@ p JSON.parse(result)
 import requests
 headers = {
   'Content-Type': 'multipart/form-data',
-  'Accept': 'application/json'
+  'Accept': 'application/json',
+  'x-timestamp': 'string',
+  'x-signature': 'string',
+  'Idempotency-Key': 'string',
+  'Authorization': 'Bearer {access-token}'
 }
 
 r = requests.post('/upload', headers = headers)
@@ -201,6 +250,10 @@ require 'vendor/autoload.php';
 $headers = array(
     'Content-Type' => 'multipart/form-data',
     'Accept' => 'application/json',
+    'x-timestamp' => 'string',
+    'x-signature' => 'string',
+    'Idempotency-Key' => 'string',
+    'Authorization' => 'Bearer {access-token}',
 );
 
 $client = new \GuzzleHttp\Client();
@@ -255,6 +308,10 @@ func main() {
     headers := map[string][]string{
         "Content-Type": []string{"multipart/form-data"},
         "Accept": []string{"application/json"},
+        "x-timestamp": []string{"string"},
+        "x-signature": []string{"string"},
+        "Idempotency-Key": []string{"string"},
+        "Authorization": []string{"Bearer {access-token}"},
     }
 
     data := bytes.NewBuffer([]byte{jsonReq})
@@ -266,6 +323,15 @@ func main() {
     // ...
 }
 
+```
+```bash
+curl -X POST https://your-api.com/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "X-Timestamp: $(date +%s)" \
+  -H "X-Signature: $(echo -n "$(date +%s).$(cat image.jpg)" | openssl dgst -sha256 -hmac "YOUR_HMAC_SECRET" | cut -d " " -f2)" \
+  -H "Idempotency-Key: unique-key-123" \
+  -F "file=@image.jpg;type=image/jpeg" \
+  -F "people_count=3"
 ```
 
 `POST /upload`
@@ -282,9 +348,14 @@ people_count: 0
 
 <h3 id="upload_file_upload_post-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[Body_upload_file_upload_post](#schemabody_upload_file_upload_post)|true|none|
+| 이름              | 위치   | 타입     | 필수 | 설명 |
+|-------------------|--------|----------|------|------|
+| Authorization     | header | string   | ✅   | Bearer 토큰 |
+| X-Timestamp       | header | string   | ✅   | UNIX timestamp (초 단위) |
+| X-Signature       | header | string   | ✅   | HMAC-SHA256 서명 |
+| Idempotency-Key   | header | string   | ✅   | 중복 업로드 방지용 고유 키 |
+| file              | form   | file     | ✅   | JPEG/PNG 이미지 (10MB 이하) |
+| people_count      | form   | integer  | ✅   | 이미지 내 사람 수 |
 
 > Example responses
 
@@ -308,8 +379,9 @@ people_count: 0
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Successful Response|[UploadResponse](#schemauploadresponse)|
 |422|[Unprocessable Entity](https://tools.ietf.org/html/rfc2518#section-10.3)|Validation Error|[HTTPValidationError](#schemahttpvalidationerror)|
 
-<aside class="success">
-This operation does not require authentication
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+HTTPBearer
 </aside>
 
 ## get_uploads_uploads_get
@@ -641,10 +713,6 @@ continued
 |---|---|---|---|---|
 |msg|string|true|none|none|
 |type|string|true|none|none|
-
-`
-
----
 
 🔒 운영 환경 체크리스트
 - HTTPS 적용 (리버스 프록시에서 SSL 인증서 설정)
