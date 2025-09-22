@@ -3,6 +3,7 @@
 LectureVision API 서버
 
 📌 개요
+
 LectureVision은 강의실 인원 수 및 관련 데이터를 관리·처리하는 API 서버입니다.  
 FastAPI + MySQL + Alembic 기반으로 구축되었으며, Docker 환경에서 손쉽게 배포할 수 있습니다.
 
