@@ -35,7 +35,7 @@ app/
  │    ├── storage.py
  │    └── uploads.py
  ├── middleware/
- │    ├── log_exceptions.py
+ │    └── log_exceptions.py
 alembic/
  ├── env.py
  ├── script.py.mako
