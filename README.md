@@ -20,7 +20,7 @@ FastAPI + MySQL + Alembic 기반으로 구축되었으며, Docker 환경에서 �
 ---
 
 📂 프로젝트 구조
-`
+```
 app/
  ├── init.py
  ├── main.py
@@ -43,7 +43,7 @@ alembic/
 alembic.ini
 .docker-compose.yml
 .env.example
-`
+```
 
 ---
 
