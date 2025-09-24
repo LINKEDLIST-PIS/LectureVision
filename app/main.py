@@ -50,9 +50,7 @@ def verify_hmac(x_timestamp: str = Header(...), x_signature: str = Header(...), 
     if not hmac.compare_digest(expected, x_signature):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")
 
-# ===== 간단한 후처리 예시 =====
 def post_process(upload_id: int):
-    # 예: 로그 남기기, 알림 발송, 썸네일 생성 등
     print(f"[POST PROCESS] Upload {upload_id} 후처리 작업 실행")
 
 # ===== 엔드포인트 =====
@@ -68,7 +66,7 @@ async def upload_file(
     x_signature: str = Header(...),
     idempotency_key: str = Header(..., alias="Idempotency-Key")
 ):
-    start_time = time.time()  # ⬅️ 처리 시간 측정 시작
+    start_time = time.time()
 
     # 1. 파일 크기 제한 (10MB)
     file_size = 0
