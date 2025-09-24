@@ -9,4 +9,4 @@ def verify_bearer(credentials: HTTPAuthorizationCredentials = Depends(security))
     expected = os.getenv("APP_BEARER_TOKEN")
     if not expected or not token or token != expected:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid auth token")
-    return token  # ÇÊ¿ä½Ã ÅäÅ« ½Äº°ÀÚ ¹İÈ¯
+    return token  # í•„ìš”ì‹œ í† í° ì‹ë³„ì ë°˜í™˜
