@@ -1,5 +1,3 @@
-`markdown
-
 LectureVision API 서버
 
 📌 개요
@@ -10,12 +8,12 @@ FastAPI + MySQL + Alembic 기반으로 구축되었으며, Docker 환경에서 �
 ---
 
 🛠 기술 스택
-- 언어/프레임워크: Python 3.12, FastAPI
-- DB: MySQL 8.x
+- 언어/프레임워크: Python 3.12-slim, FastAPI
+- DB: MariaDB
 - ORM: SQLAlchemy (Async)
 - 마이그레이션: Alembic
 - 배포: Docker, Docker Compose
-- 리버스 프록시: Nginx
+- 리버스 프록시: ADM Reverse Proxy
 
 ---
 
