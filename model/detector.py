@@ -2,7 +2,7 @@ import torch
 from ultralytics import YOLO
 from .config import DEVICE, CONF_THRESHOLD
 
-MODEL = YOLO("yolo11m.pt").to(DEVICE)
+model = YOLO("yolo11m.pt").to(DEVICE)
 
 def detect_people(frame):
     results = model(frame, conf=CONF_THRESHOLD, verbose=False)

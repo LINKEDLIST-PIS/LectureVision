@@ -6,11 +6,13 @@ from .config import CAMERA_RTSP
 
 def monitor_loop():
     cap = cv2.VideoCapture(CAMERA_RTSP)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     if not cap.isOpened():
         print("❌ Camera open failed")
         return
 
     while True:
+        cap.grab()
         ret, frame = cap.read()
         if not ret:
             continue
