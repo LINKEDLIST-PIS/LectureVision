@@ -4,6 +4,8 @@ from .detector import detect_people
 from .processing import apply_mosaic
 from .config import CAMERA_RTSP
 
+pause_monitor = False
+
 def monitor_loop():
     cap = cv2.VideoCapture(CAMERA_RTSP)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -15,6 +17,12 @@ def monitor_loop():
         cap.grab()
         ret, frame = cap.read()
         if not ret:
+            continue
+
+        if pause_monitor:
+            cv2.imshow("Model Server Monitor", frame)
+            if cv2.waitKey(1) & 0xFF == 27:
+                break
             continue
 
         people_count, boxes = detect_people(frame)

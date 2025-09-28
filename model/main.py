@@ -14,10 +14,13 @@ model = FastAPI(
 
 @model.post("/measure")
 def measure():
+    global pause_monitor
+    pause_monitor = True 
     frame = capture_frame()
     people_count, boxes = detect_people(frame)
     mosaicked = apply_mosaic(frame, boxes)
     resp = upload_image(mosaicked, people_count)
+    pause_monitor = False
     return {
         "people_count": people_count,
         "api_response": resp.json()

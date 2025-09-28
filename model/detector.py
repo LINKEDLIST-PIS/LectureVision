@@ -1,11 +1,14 @@
 import torch
+import threading
 from ultralytics import YOLO
 from .config import DEVICE, CONF_THRESHOLD
 
 model = YOLO("yolo11m.pt").to(DEVICE)
+gpu_lock = threading.Lock()
 
 def detect_people(frame):
-    results = model(frame, conf=CONF_THRESHOLD, verbose=False)
+    with gpu_lock:
+        results = model(frame, conf=CONF_THRESHOLD, verbose=False)
     boxes = []
     for b in results[0].boxes:
         if int(b.cls) == 0: 
