@@ -5,7 +5,7 @@ from .camera import capture_frame
 from .detector import detect_people
 from .processing import apply_mosaic
 from .uploader import upload_image
-from .monitor import start_monitoring
+from .monitor import start_monitoring, pause_monitor
 
 model = FastAPI(
     title="LectureVision Model Server",
