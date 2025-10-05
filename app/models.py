@@ -14,3 +14,4 @@ class Upload(Base):
     people_count = Column(Integer, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
     idempotency_key = Column(String(64), unique=True, nullable=True)
+    client_id = Column(String(100), nullable=True, index=True)

@@ -16,7 +16,7 @@ def save_file(file_obj, original_name: str) -> Tuple[str, str]:
     try:
         with open(dest_path, "wb") as buffer:
             shutil.copyfileobj(file_obj, buffer)
-        os.chmod(dest_path, 0o200) # 쓰기만 가능
+        os.chmod(dest_path, 0o200)
         return stored_name, str(dest_path)
     except Exception:
         if dest_path.exists():
