@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Lecture Vision (Mobile)</title>
+<style>
+    :root{
+        --accent: #1E90FF;
+        --bg: #ffffff;
+        --text: #1E90FF;
+        --card-border: 2px solid var(--accent);
+        --radius: 10px;
+    }
+    html,body{height:100%;margin:0;padding:0;background:var(--bg);font-family:Arial,system-ui,-apple-system;}
+    .app{display:flex;flex-direction:column;height:100vh;}
+    header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:3px solid var(--accent);}
+    header h1{font-size:20px;margin:0;color:var(--text);} 
+    header button{font-size:20px;background:none;border:none;color:var(--text);}
+
+    .content{flex:1;overflow:auto;padding:12px;}
+
+    /* Grid layout for home */
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:minmax(80px,auto);gap:10px}
+    .card{background:var(--bg);border:var(--card-border);padding:12px;border-radius:var(--radius);box-sizing:border-box;}
+    .big-card{grid-column:1 / -1;display:flex;flex-direction:column;gap:8px}
+    .stats{display:flex;justify-content:space-between;align-items:center}
+    .stat{flex:1;text-align:center;padding:8px;border-radius:8px}
+    .stat h3{margin:0;font-size:18px}
+    .stat p{margin:6px 0 0 0;font-size:16px}
+
+    .btn{display:inline-block;padding:10px 12px;border-radius:8px;border:2px solid var(--accent);background:var(--bg);color:var(--accent);font-weight:700;font-size:16px;text-align:center;cursor:pointer}
+    .btn-block{width:100%;}
+
+    /* timetable */
+    .timetable{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+    .timetable .head{font-weight:700;text-align:center}
+    .cell{min-height:56px;border-radius:8px;padding:6px;border:1px dashed rgba(30,144,255,0.15);font-size:12px}
+
+    /* list */
+    .list{display:flex;flex-direction:column;gap:8px}
+    .list-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    /* footer nav */
+    footer{display:flex;justify-content:space-around;padding:10px 8px;border-top:3px solid var(--accent);}
+    footer button{background:none;border:none;color:var(--text);font-weight:700;font-size:16px}
+
+    /* modal */
+    .modal{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+    .modal.open{display:flex}
+    .modal .panel{width:100%;max-width:540px;background:var(--bg);padding:14px;border-radius:12px;border:2px solid var(--accent)}
+    input,select{width:100%;padding:10px;margin:6px 0;border:2px solid var(--accent);border-radius:8px;font-size:16px}
+
+    /* responsive tweaks */
+    @media(min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}.big-card{grid-column:1 / -1}}
+
+</style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <h1>Lecture Vision</h1>
+        <div>
+            <button id="alarmBtn">🔔</button>
+        </div>
+    </header>
+
+    <div class="content" id="content">
+        <!-- 로그인/회원 관련은 간단히 홈에 통합 (더 필요하면 분리 가능) -->
+
+        <!-- Home Page -->
+        <section id="homeView">
+            <div class="grid">
+                <div class="big-card card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <h2 id="classTitle">강의명: (설정 없음)</h2>
+                            <p id="classInfo">장소 · 담당자 · 기타</p>
+                        </div>
+                        <div style="text-align:right">
+                            <div id="clockLarge" style="font-size:16px;font-weight:700">--:--:--</div>
+                            <div style="font-size:12px;color:rgba(0,0,0,0.45)">현재시간</div>
+                        </div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat">
+                            <h3 id="currentCount">0</h3>
+                            <p>현재 인원</p>
+                        </div>
+                        <div class="stat">
+                            <h3 id="totalCount">0</h3>
+                            <p>총 인원</p>
+                        </div>
+                        <div class="stat">
+                            <h3 id="absentCount">0</h3>
+                            <p>결석</p>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:8px;margin-top:8px">
+                        <button class="btn btn-block" id="measureBtn">🔄 측정 (수동)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>오늘 시간표(빠른보기)</h4>
+                    <div id="todaySchedulePreview" style="font-size:14px;color:rgba(0,0,0,0.8)">등록된 수업이 없습니다.</div>
+                    <div style="margin-top:8px"><button class="btn" onclick="openModal('addClassModal')">+ 시간표 추가</button></div>
+                </div>
+
+                <div class="card">
+                    <h4>타이머</h4>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <input type="number" id="timerMinutes" min="1" placeholder="분 단위" style="width:110px;padding:8px;border-radius:8px;border:2px solid var(--accent)">
+                        <button class="btn" id="timerStart">시작</button>
+                        <button class="btn" id="timerStop">중지</button>
+                    </div>
+                    <div style="margin-top:8px;font-size:13px;color:rgba(0,0,0,0.6)">상태: <span id="timerStatus">정지</span></div>
+                </div>
+
+                <div class="card">
+                    <h4>최근 기록</h4>
+                    <div id="recentRecords" style="font-size:13px;color:rgba(0,0,0,0.8)">기록이 없습니다.</div>
+                    <div style="margin-top:8px"><button class="btn" onclick="switchView('recordView')">모두 보기</button></div>
+                </div>
+
+                <div class="card">
+                    <h4>주간 요약</h4>
+                    <div id="weekSummary" style="font-size:13px;color:rgba(0,0,0,0.8)">-</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Timetable Page -->
+        <section id="timetableView" style="display:none">
+            <div class="card">
+                <h3>시간표 편집</h3>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <button class="btn" onclick="openModal('addClassModal')">+ 수업 추가</button>
+                    <button class="btn" onclick="clearTimetable()">전체 삭제</button>
+                </div>
+                <div class="timetable" id="timetableGrid">
+                    <div class="head">시간</div>
+                    <div class="head">월</div>
+                    <div class="head">화</div>
+                    <div class="head">수</div>
+                    <div class="head">목</div>
+                    <div class="head">금</div>
+                    <!-- 시간/셀은 JS에서 채움 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Record Page -->
+        <section id="recordView" style="display:none">
+            <div class="card">
+                <h3>출석 기록</h3>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <button class="btn" onclick="exportCSV()">CSV 내보내기</button>
+                    <button class="btn" onclick="clearAllRecords()">기록 전체 삭제</button>
+                    <button class="btn" onclick="switchView('homeView')">홈으로</button>
+                </div>
+                <div id="recordsList" class="list"></div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <button onclick="switchView('homeView')">홈</button>
+        <button onclick="switchView('timetableView')">시간표</button>
+        <button onclick="switchView('recordView')">기록</button>
+    </footer>
+</div>
+
+<!-- 모달: 수업 추가 -->
+<div id="addClassModal" class="modal">
+    <div class="panel">
+        <h3>수업 추가 / 편집</h3>
+        <input id="inputClassTitle" placeholder="수업명">
+        <select id="inputClassDay">
+            <option value="mon">월</option><option value="tue">화</option><option value="wed">수</option>
+            <option value="thu">목</option><option value="fri">금</option>
+        </select>
+        <input id="inputClassStart" placeholder="시작 (예: 10:00)">
+        <input id="inputClassEnd" placeholder="종료 (예: 11:00)">
+        <input id="inputClassCnt" placeholder="예상 인원(숫자)">
+        <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" onclick="saveClass()">저장</button>
+            <button class="btn" onclick="closeModal('addClassModal')">취소</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 데이터 모델: localStorage 사용
+const STORAGE_KEYS = {TIMETABLE:'lv_timetable_v1', RECORDS:'lv_records_v1', SETTINGS:'lv_settings_v1'};
+
+// 초기화
+let timetable = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIMETABLE) || '[]');
+let records = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECORDS) || '[]');
+let settings = JSON.parse(localStorage.getItem(STORAGE_KEYS.SETTINGS) || '{}');
+
+// UI 요소 레퍼런스
+const currentCountEl = document.getElementById('currentCount');
+const totalCountEl = document.getElementById('totalCount');
+const absentCountEl = document.getElementById('absentCount');
+const clockLarge = document.getElementById('clockLarge');
+const measureBtn = document.getElementById('measureBtn');
+const recentRecordsEl = document.getElementById('recentRecords');
+const weekSummaryEl = document.getElementById('weekSummary');
+
+// 타이머
+let timerId = null;
+let timerRunning = false;
+
+function saveAll(){
+    localStorage.setItem(STORAGE_KEYS.TIMETABLE, JSON.stringify(timetable));
+    localStorage.setItem(STORAGE_KEYS.RECORDS, JSON.stringify(records));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+}
+
+function switchView(viewId){
+    ['homeView','timetableView','recordView'].forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById(viewId).style.display='block';
+    if(viewId==='timetableView') renderTimetable();
+    if(viewId==='recordView') renderRecords();
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// Clock
+function updateClock(){
+    const now = new Date();
+    clockLarge.innerText = now.toLocaleTimeString();
+}
+setInterval(updateClock,1000); updateClock();
+
+// Measure action (실측값 없이 수동 입력 시 팝업으로 받도록 함)
+measureBtn.addEventListener('click',()=>{
+    const cnt = prompt('현재 인원 수를 입력하세요 (숫자)', '0');
+    if(cnt===null) return;
+    const total = prompt('총 인원 수를 입력하세요 (숫자)', '0');
+    if(total===null) return;
+    const absent = prompt('결석 인원 수를 입력하세요 (숫자)', '0');
+    if(absent===null) return;
+    const rec = {id:Date.now(), time:new Date().toISOString(), current:parseInt(cnt)||0, total:parseInt(total)||0, absent:parseInt(absent)||0};
+    records.unshift(rec);
+    saveAll();
+    renderRecent();
+    renderWeekSummary();
+    alert('측정이 기록되었습니다.');
+});
+
+function renderRecent(){
+    if(records.length===0){ recentRecordsEl.innerText='기록이 없습니다.'; return; }
+    recentRecordsEl.innerHTML = '';
+    const top = records.slice(0,3);
+    top.forEach(r=>{
+        const d = new Date(r.time);
+        const el = document.createElement('div');
+        el.style.marginBottom='6px';
+        el.innerText = `${d.toLocaleString()} - 현재:${r.current} 총:${r.total} 결석:${r.absent}`;
+        recentRecordsEl.appendChild(el);
+    });
+}
+
+function renderWeekSummary(){
+    // 단순 요약: 최근 7개 기록 평균
+    if(records.length===0){ weekSummaryEl.innerText='기록 없음'; return; }
+    const last7 = records.slice(0,7);
+    const avgCurrent = Math.round(last7.reduce((s,r)=>s+r.current,0)/last7.length);
+    const avgTotal = Math.round(last7.reduce((s,r)=>s+r.total,0)/last7.length);
+    weekSummaryEl.innerText = `최근 ${last7.length}회 평균 — 현재:${avgCurrent} 총:${avgTotal}`;
+}
+
+renderRecent(); renderWeekSummary();
+
+// Timetable 기능
+function saveClass(){
+    const title = document.getElementById('inputClassTitle').value.trim();
+    const day = document.getElementById('inputClassDay').value;
+    const start = document.getElementById('inputClassStart').value.trim();
+    const end = document.getElementById('inputClassEnd').value.trim();
+    const cnt = parseInt(document.getElementById('inputClassCnt').value) || 0;
+    if(!title || !start || !end){ alert('수업명/시작/종료를 입력하세요'); return; }
+    timetable.push({id:Date.now(),title,day,start,end,cnt});
+    saveAll(); closeModal('addClassModal'); renderTimetable(); renderTodayPreview();
+}
+
+function renderTimetable(){
+    const grid = document.getElementById('timetableGrid');
+    // 시간 헤더 표시는 이미 포함되므로 내용을 먼저 제거하고 시간대 생성
+    grid.innerHTML = '<div class="head">시간</div><div class="head">월</div><div class="head">화</div><div class="head">수</div><div class="head">목</div><div class="head">금</div>';
+    // 시간 슬롯 예시: 9시~18시
+    const hours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+    for(let h of hours){
+        const timeCell = document.createElement('div'); timeCell.className='cell'; timeCell.innerText=h; grid.appendChild(timeCell);
+        ['mon','tue','wed','thu','fri'].forEach(day=>{
+            const cell = document.createElement('div'); cell.className='cell';
+            const items = timetable.filter(t=>t.day===day && t.start.startsWith(h));
+            if(items.length){
+                items.forEach(it=>{
+                    const itEl = document.createElement('div'); itEl.style.padding='6px'; itEl.style.border='1px solid rgba(30,144,255,0.12)'; itEl.style.borderRadius='6px'; itEl.style.marginBottom='4px';
+                    itEl.innerHTML = `<strong>${it.title}</strong><div style="font-size:12px">${it.start} - ${it.end} (${it.cnt||'-'}명)</div><div style="margin-top:6px;text-align:right"><button style="font-size:12px" onclick="deleteClass(${it.id})">삭제</button></div>`;
+                    cell.appendChild(itEl);
+                });
+            }
+            grid.appendChild(cell);
+        });
+    }
+}
+
+function deleteClass(id){
+    if(!confirm('정말 삭제하시겠습니까?')) return;
+    timetable = timetable.filter(t=>t.id!==id);
+    saveAll(); renderTimetable(); renderTodayPreview();
+}
+
+function clearTimetable(){
+    if(!confirm('시간표를 모두 삭제하시겠습니까?')) return;
+    timetable = [];
+    saveAll(); renderTimetable(); renderTodayPreview();
+}
+
+function renderTodayPreview(){
+    const days = ['sun','mon','tue','wed','thu','fri','sat'];
+    const todayIdx = new Date().getDay(); // 0-6 (일-월-...)
+    const map = {1:'mon',2:'tue',3:'wed',4:'thu',5:'fri'};
+    const dayKey = map[todayIdx] || 'mon';
+    const today = timetable.filter(t=>t.day===dayKey);
+    const el = document.getElementById('todaySchedulePreview');
+    if(today.length===0){ el.innerText='등록된 수업이 없습니다.'; return; }
+    el.innerHTML = '';
+    today.forEach(t=>{
+        const div = document.createElement('div'); div.innerText = `${t.start} - ${t.end} | ${t.title} (${t.cnt||'-'}명)`; el.appendChild(div);
+    });
+}
+
+renderTimetable(); renderTodayPreview();
+
+// Records 화면
+function renderRecords(){
+    const list = document.getElementById('recordsList'); list.innerHTML='';
+    if(records.length===0){ list.innerHTML='<div>기록이 없습니다.</div>'; return; }
+    records.forEach(r=>{
+        const item = document.createElement('div'); item.className='list-item';
+        const d = new Date(r.time);
+        item.innerHTML = `<div>${d.toLocaleString()}<br>현재:${r.current} 총:${r.total} 결석:${r.absent}</div><div><button onclick="deleteRecord(${r.id})">삭제</button></div>`;
+        list.appendChild(item);
+    });
+}
+
+function deleteRecord(id){
+    if(!confirm('삭제하시겠습니까?')) return;
+    records = records.filter(r=>r.id!==id);
+    saveAll(); renderRecords(); renderRecent(); renderWeekSummary();
+}
+
+function clearAllRecords(){
+    if(!confirm('모든 기록을 삭제하시겠습니까?')) return;
+    records = []; saveAll(); renderRecords(); renderRecent(); renderWeekSummary();
+}
+
+function exportCSV(){
+    if(records.length===0){ alert('내보낼 기록이 없습니다.'); return; }
+    const header = 'time,current,total,absent\n';
+    const rows = records.map(r=>`${r.time},${r.current},${r.total},${r.absent}`).join('\n');
+    const csv = header + rows;
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download = 'lecture_vision_records.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+// Timer 기능 구현
+const timerMinutesInput = document.getElementById('timerMinutes');
+const timerStartBtn = document.getElementById('timerStart');
+const timerStopBtn = document.getElementById('timerStop');
+const timerStatusEl = document.getElementById('timerStatus');
+
+function startTimer(){
+    const min = parseInt(timerMinutesInput.value);
+    if(!min || min<=0){ alert('측정 간격(분)을 입력하세요'); return; }
+    if(timerRunning) { alert('타이머가 이미 실행중입니다.'); return; }
+    timerRunning = true; timerStatusEl.innerText = `실행 중 (${min}분)`;
+    timerId = setInterval(()=>{
+        // 자동 측정 로직: 측정 결과를 자동 생성하거나 네이티브 센서와 연동 필요
+        const simulatedCurrent = Math.max(0, Math.round((Math.random()*10)+10));
+        const simulatedTotal = simulatedCurrent + Math.round(Math.random()*3);
+        const simulatedAbsent = simulatedTotal - simulatedCurrent;
+        const rec = {id:Date.now(), time:new Date().toISOString(), current:simulatedCurrent, total:simulatedTotal, absent:simulatedAbsent};
+        records.unshift(rec); saveAll(); renderRecent(); renderWeekSummary();
+        // 모바일에서는 Notification API를 사용하거나 Capacitor 로컬 노티로 대체 가능
+        try{ if(window.navigator && navigator.vibrate) navigator.vibrate(100); }catch(e){}
+    }, min*60*1000);
+}
+
+function stopTimer(){
+    if(timerId){ clearInterval(timerId); timerId=null; }
+    timerRunning=false; timerStatusEl.innerText='정지';
+}
+
+timerStartBtn.addEventListener('click', startTimer);
+timerStopBtn.addEventListener('click', stopTimer);
+
+// 알람 버튼 (웹에서는 단순 알림)
+document.getElementById('alarmBtn').addEventListener('click',()=>{
+    alert('알람: 알림 테스트');
+});
+
+// 삭제/초기 샘플 로드 (디버그용)
+function loadSample(){
+    if(timetable.length===0){
+        timetable.push({id:1,title:'전공 수업',day:'mon',start:'10:00',end:'11:00',cnt:30});
+        timetable.push({id:2,title:'데이터베이스',day:'wed',start:'13:00',end:'14:30',cnt:25});
+        saveAll(); renderTimetable(); renderTodayPreview();
+    }
+}
+loadSample();
+
+// 페이지 로드 시 홈으로
+switchView('homeView');
+
+</script>
+</body>
+</html>
