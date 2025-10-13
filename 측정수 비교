@@ -1,0 +1,63 @@
+<HomeScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 8
+        spacing: 8
+        BoxLayout:
+            size_hint_y: None
+            height: '56dp'
+            LabelBig:
+                text: root.class_title
+            Label:
+                text: root.clock_text
+                size_hint_x: 0.5
+                halign: 'right'
+                valign: 'middle'
+                text_size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: '120dp'
+            spacing: 8
+            BoxLayout:
+                orientation: 'vertical'
+                canvas.before:
+                    Color:
+                        rgba: (0.95,0.95,0.95,1)
+                Label:
+                    text: str(root.current_count)
+                    font_size: '28sp'
+                    color: 0.117,0.565,1,1
+                Label:
+                    text: '현재 인원'
+            BoxLayout:
+                orientation: 'vertical'
+                canvas.before:
+                    Color:
+                        rgba: (0.95,0.95,0.95,1)
+                Label:
+                    text: str(root.total_count)
+                    font_size: '28sp'
+                    color: 0.117,0.565,1,1
+                Label:
+                    text: '총 인원'
+            BoxLayout:
+                orientation: 'vertical'
+                canvas.before:
+                    Color:
+                        rgba: (0.95,0.95,0.95,1)
+                Label:
+                    text: str(root.absent_count)
+                    font_size: '28sp'
+                    color: 0.117,0.565,1,1
+                Label:
+                    text: '결석'
+        BoxLayout:
+            size_hint_y: None
+            height: '48dp'
+            spacing: 8
+            Button:
+                text: '🔄 측정 (수동)'
+                on_release: root.manual_measure()
+            Button:
+                text: '측정 (카메라 → API)'
+                on_release: root.camera_measure()
