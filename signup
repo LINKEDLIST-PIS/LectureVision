@@ -1,0 +1,38 @@
+<SignupScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 12
+        spacing: 12
+        LabelBig:
+            text: '회원가입'
+            size_hint_y: None
+            height: '36dp'
+        TextInput:
+            id: name
+            hint_text: '이름'
+            multiline: False
+            height: '44dp'
+        TextInput:
+            id: phone
+            hint_text: '전화번호'
+            multiline: False
+            height: '44dp'
+        TextInput:
+            id: email
+            hint_text: '이메일'
+            multiline: False
+            height: '44dp'
+        TextInput:
+            id: password
+            hint_text: '비밀번호'
+            password: True
+            multiline: False
+            height: '44dp'
+        Button:
+            text: '회원가입 완료'
+            on_release: root.signup(name.text, phone.text, email.text, password.text)
+            height: '44dp'
+        Button:
+            text: '로그인 화면'
+            on_release: app.root.current = 'login'
+            height: '44dp'
