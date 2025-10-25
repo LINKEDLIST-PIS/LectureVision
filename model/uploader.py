@@ -4,7 +4,23 @@ import hashlib
 import uuid
 import cv2
 import requests
-from .config import API_BASE, API_TOKEN, HMAC_SECRET
+from . import config
+
+def get_token():
+    resp = requests.post(
+        f"{config.API_BASE}/token",
+        params={"model_server_id": config.MODEL_SERVER_ID}
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    config.API_TOKEN = data["access_token"]
+    config.TOKEN_EXPIRE_AT = int(time.time()) + 9 * 60
+    return config.API_TOKEN
+
+def ensure_token():
+    if not config.API_TOKEN or time.time() > config.TOKEN_EXPIRE_AT:
+        return get_token()
+    return config.API_TOKEN
 
 def upload_image(frame, people_count: int):
     success, enc = cv2.imencode(".png", frame)
@@ -14,14 +30,16 @@ def upload_image(frame, people_count: int):
 
     timestamp = str(int(time.time()))
 
-    secret = HMAC_SECRET.encode() if isinstance(HMAC_SECRET, str) else HMAC_SECRET
+    secret = config.HMAC_SECRET.encode() if isinstance(config.HMAC_SECRET, str) else config.HMAC_SECRET
     message = timestamp.encode() + b"." + file_bytes
     signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
 
     idempotency_key = f"model-req-{uuid.uuid4()}"
 
+    token = ensure_token()
+
     headers = {
-        "Authorization": f"Bearer {API_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "X-Timestamp": timestamp,
         "X-Signature": signature,
         "Idempotency-Key": idempotency_key,
@@ -34,6 +52,6 @@ def upload_image(frame, people_count: int):
         "people_count": people_count
     }
 
-    resp = requests.post(f"{API_BASE}/upload", headers=headers, files=files, data=data)
-
+    resp = requests.post(f"{config.API_BASE}/upload", headers=headers, files=files, data=data)
+    resp.raise_for_status()
     return resp
