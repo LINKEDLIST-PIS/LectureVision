@@ -166,6 +166,177 @@ alembic downgrade -1
 - `POST /upload`
 - `GET /uploads`
 
+### 🔐 인증 방식
+- 대부분의 엔드포인트는 `Authorization: Bearer <token>` 헤더 필요
+
+---
+
+### 📂 Upload 파일 업로드
+
+**POST `/upload`**  
+업로드 요청 (파일 + 메타데이터)
+
+#### 요청 예제 (multipart/form-data)
+```http
+POST /upload HTTP/1.1
+Host: your-api.com
+Authorization: Bearer <token>
+X-Timestamp: 2025-10-25T16:50:00Z
+X-Signature: abc123signature
+Idempotency-Key: upload-001
+Content-Type: multipart/form-data
+
+file: [binary file]
+people_count: 3
+client_id: client-xyz
+```
+
+#### 응답 예제
+```json
+{
+  "original_name": "photo.jpg",
+  "stored_name": "abc123.jpg",
+  "abs_path": "/uploads/abc123.jpg",
+  "people_count": 3,
+  "uploaded_at": "2025-10-25T16:51:00Z",
+  "client_id": "client-xyz",
+  "id": 42
+}
+```
+
+---
+
+### 📂 Upload 목록 조회
+
+**GET `/uploads`**
+
+#### 요청 예제
+```http
+GET /uploads?skip=0&limit=50 HTTP/1.1
+Host: your-api.com
+Authorization: Bearer <token>
+```
+
+#### 응답 예제
+```json
+[
+  {
+    "original_name": "photo.jpg",
+    "stored_name": "abc123.jpg",
+    "abs_path": "/uploads/abc123.jpg",
+    "people_count": 3,
+    "uploaded_at": "2025-10-25T16:51:00Z",
+    "client_id": "client-xyz",
+    "id": 42
+  }
+]
+```
+
+---
+
+### 🔑 토큰 발급
+
+**POST `/token`**
+
+#### 요청 예제
+```http
+POST /token?model_server_id=model-001 HTTP/1.1
+Host: your-api.com
+```
+
+#### 응답 예제
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+---
+
+### 👤 회원가입
+
+**POST `/accounts/signup`**
+
+#### 요청 예제
+```http
+POST /accounts/signup HTTP/1.1
+Host: your-api.com
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "securepassword"
+}
+```
+
+#### 응답 예제
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "created_at": "2025-10-25T16:52:00Z",
+  "is_verified": false
+}
+```
+
+---
+
+### ✅ 이메일 인증
+
+**GET `/accounts/verify`**
+
+#### 요청 예제
+```http
+GET /accounts/verify?token=abc123 HTTP/1.1
+Host: your-api.com
+```
+
+---
+
+### 🔐 로그인
+
+**POST `/accounts/login`**
+
+#### 요청 예제
+```http
+POST /accounts/login HTTP/1.1
+Host: your-api.com
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "securepassword"
+}
+```
+
+---
+
+### 🎟 티켓 발급
+
+**POST `/tickets/issue`**
+
+#### 요청 예제
+```http
+POST /tickets/issue HTTP/1.1
+Host: your-api.com
+Authorization: Bearer <token>
+```
+
+---
+
+### 🎟 티켓 검증
+
+**POST `/tickets/validate`**
+
+#### 요청 예제
+```http
+POST /tickets/validate?ticket=abc123 HTTP/1.1
+Host: your-api.com
+```
+
+---
+
 ---
 
 ## 🔒 운영 환경 체크리스트
