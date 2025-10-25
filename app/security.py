@@ -28,7 +28,7 @@ def create_access_token(data: dict, expires_delta: int = None):
         "iat": datetime.utcnow(),
         "iss": ISSUER,
         "aud": AUDIENCE,
-        "sub": data.get["sub"],
+        "sub": data.get("sub"),
         "jti": str(uuid.uuid4())
     })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
