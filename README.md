@@ -62,11 +62,11 @@ docker-compose.yml
 ## ⚙ 환경 변수
 `.env` 파일 예시:
 ```env
-DB_USER=apiserver
-DB_PASSWORD=Qkrdlstjr3156
+DB_USER=yourid
+DB_PASSWORD=yourpassword
 DB_HOST=mariaDB
-DB_PORT=3306
-DB_NAME=lecturevision
+DB_PORT=8080
+DB_NAME=DBtable
 
 JWT_SECRET=your-secret-key
 JWT_ALGORITHM=HS256
@@ -77,7 +77,7 @@ JWT_AUDIENCE=lecturevision-client
 HMAC_SECRET=your-hmac-secret
 HMAC_TOLERANCE_SECONDS=60
 
-REDIS_URL=redis://redis:6379
+REDIS_URL=redis://redis:6666
 ```
 
 ---
