@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.son.lecture_project">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ginnoo"
+        android:label="Lecture Vision"
+        android:roundIcon="@drawable/ginnoo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Lecture_project">
+        <activity
+            android:name=".TimerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BottomNavActivity"
+            android:exported="false" />
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" /> <!-- 앱 실행 시 가장 먼저 뜨는 화면 -->
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Design.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity> <!-- SplashActivity 이후 이동할 메인 화면 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+    </application>
+
+</manifest>

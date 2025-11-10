@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_home" android:title="홈" android:icon="@drawable/ic_home"/>
+    <item android:id="@+id/nav_timetable" android:title="시간표" android:icon="@drawable/ic_calendar"/>
+    <item android:id="@+id/nav_records" android:title="기록" android:icon="@drawable/ic_file"/>
+    <item android:id="@+id/nav_settings" android:title="설정" android:icon="@drawable/ic_settings"/>
+</menu>
