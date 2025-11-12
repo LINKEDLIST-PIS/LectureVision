@@ -10,6 +10,7 @@ import com.son.lecture_project.data.api.ApiResponse
 import com.son.lecture_project.data.api.AuthService
 import com.son.lecture_project.data.api.LoginRequest
 import com.son.lecture_project.databinding.ActivityLoginBinding
+import com.son.lecture_project.SignupActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -43,7 +44,8 @@ class LoginActivity : AppCompatActivity() {
                 override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
                     if (response.isSuccessful && response.body()?.success == true) {
                         Toast.makeText(this@LoginActivity, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                        // MainActivity -> BottomNavActivity로 최종 수정
+                        startActivity(Intent(this@LoginActivity, BottomNavActivity::class.java)) 
                         finish()
                     } else {
                         Toast.makeText(

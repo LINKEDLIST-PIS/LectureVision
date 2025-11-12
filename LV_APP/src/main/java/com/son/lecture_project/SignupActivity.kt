@@ -1,4 +1,4 @@
-package com.son.lecture_project.ui.auth
+package com.son.lecture_project
 
 import android.os.Bundle
 import android.widget.Toast
