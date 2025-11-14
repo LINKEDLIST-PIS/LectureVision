@@ -5,29 +5,26 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".BottomNavActivity"> <!-- 컨텍스트 이름 수정 -->
+    tools:context=".BottomNavigationActivity">
 
-    <!-- 1. 상단 앱 바 -->
+    <!-- 1. 상단바 (Top App Bar) -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/sky_blue_500"
+            app:menu="@menu/top_app_bar_menu"
             app:title="Lecture Vision"
-            app:titleTextColor="@android:color/white"
-            app:menu="@menu/top_app_bar_menu" />
-
+            app:titleTextColor="@android:color/white" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- 2. 프래그먼트가 표시될 컨테이너 -->
+    <!-- 2. 프래그먼트가 교체될 공간 -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
@@ -37,14 +34,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 3. 하단 네비게이션 바 -->
+    <!-- 3. 하단 네비게이션 바 (아이콘 색상 적용) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:itemIconTint="@color/nav_item_color"  <!-- 이 부분이 아이콘 색상을 적용하는 핵심 -->
+    app:itemTextColor="@color/nav_item_color" <!-- 이 부분이 텍스트 색상을 적용하는 핵심 -->
+    app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+    

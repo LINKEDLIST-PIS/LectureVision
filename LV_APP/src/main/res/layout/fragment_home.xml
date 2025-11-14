@@ -4,171 +4,232 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#f0f4f8"
     tools:context=".HomeFragment">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- 공지사항 -->
+        <!-- ============== 1. 공지사항 카드 ============== -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
+            android:id="@+id/card_notice"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="📢 공지사항"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold"/>
 
-                <!-- TODO: RecyclerView로 공지사항 목록 구현 -->
-                <TextView
-                    android:id="@+id/text_notices"
+                <LinearLayout
+                    android:id="@+id/layout_notice_items"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="11월 중간고사 일정 안내
-출석 체크 시스템 업데이트
-휴강 안내 - 11월 5일"
-                    android:lineSpacingExtra="4dp"/>
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 출석 현황 -->
+        <!-- ============== 2. 출석 현황 그리드 ============== -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/layout_attendance_grid"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:orientation="horizontal"
-            android:layout_marginBottom="16dp"
-            android:baselineAligned="false">
+            android:baselineAligned="false"
+            app:layout_constraintTop_toBottomOf="@id/card_notice"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                 <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+                    <ImageView android:src="@drawable/ic_users" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginBottom="8dp" app:tint="@color/sky_blue_500"/>
+                    <TextView android:text="현재 인원"/>
+                    <TextView android:id="@+id/text_present_count" tools:text="28" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold"/>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <View android:layout_width="12dp" android:layout_height="0dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="현재 인원" android:layout_marginBottom="4dp"/>
-                    <TextView android:id="@+id/text_present_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="28" android:textSize="22sp" android:textStyle="bold"/>
+                    android:gravity="center"
+                    android:padding="16dp">
+                    <ImageView android:src="@drawable/ic_users" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginBottom="8dp" app:tint="?attr/colorOnSurfaceVariant"/>
+                    <TextView android:text="총 인원"/>
+                    <TextView android:id="@+id/text_total_count" tools:text="30" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <View android:layout_width="12dp" android:layout_height="0dp"/>
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
+                android:layout_height="match_parent"
+                android:layout_weight="1">
                  <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="총 인원" android:layout_marginBottom="4dp"/>
-                    <TextView android:id="@+id/text_total_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="30" android:textSize="22sp" android:textStyle="bold"/>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp">
-                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp"
-                    android:gravity="center">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="결석" android:layout_marginBottom="4dp"/>
-                    <TextView android:id="@+id/text_absent_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2" android:textSize="22sp" android:textStyle="bold" android:textColor="@android:color/holo_red_dark"/>
+                    android:gravity="center"
+                    android:padding="16dp">
+                     <ImageView android:src="@drawable/ic_user_x" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginBottom="8dp" app:tint="@color/red_500"/>
+                    <TextView android:text="결석"/>
+                    <TextView android:id="@+id/text_absent_count" tools:text="2" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" android:textColor="@color/red_500"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- 출석 타이머 -->
+        <!-- ============== 3. 출석 타이머 카드 ============== -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
+            android:id="@+id/card_timer"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:layout_constraintTop_toBottomOf="@id/layout_attendance_grid"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="20dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="🕒 출석 타이머"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="16dp"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <ImageView android:src="@drawable/ic_clock" android:layout_width="24dp" android:layout_height="24dp" app:tint="@color/sky_blue_500"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="출석 타이머"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-                <Button
-                    android:id="@+id/button_start_timer_activity"
+                <LinearLayout
+                    android:id="@+id/layout_time_picker_group"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginTop="16dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="수업 시간 설정" />
+                    <NumberPicker
+                        android:id="@+id/picker_minutes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="120dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_timer_display"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:textAppearance="?attr/textAppearanceDisplayMedium"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="89:59" />
+
+                <Button
+                    android:id="@+id/button_start_timer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
                     android:text="출석 체크 시작" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 오늘의 시간표 -->
+        <!-- ============== 4. 오늘의 시간표 카드 ============== -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
+            android:id="@+id/card_schedule"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:layout_constraintTop_toBottomOf="@id/card_timer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
-
+                android:padding="20dp">
                 <TextView
                     android:id="@+id/text_today_schedule_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📅 오늘의 시간표 (월요일)"
-                    android:textSize="18sp"
+                    android:text="📅 오늘의 시간표"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textStyle="bold" />
 
-                <!-- TODO: RecyclerView로 시간표 목록 구현 -->
-                <TextView
-                    android:id="@+id/text_today_classes"
-                    android:layout_width="wrap_content"
+                 <LinearLayout
+                    android:id="@+id/layout_schedule_items"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="오늘은 수업이 없습니다." />
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp"/>
+
+                <TextView
+                    android:id="@+id/text_no_schedule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="24dp"
+                    android:text="오늘은 예정된 수업이 없습니다."
+                    android:visibility="gone"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.core.widget.NestedScrollView>
