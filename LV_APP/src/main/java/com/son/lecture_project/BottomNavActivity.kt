@@ -4,15 +4,9 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-// ======= 아래 4줄이 추가되었습니다! =======
-import com.son.lecture_project.HomeFragment
-import com.son.lecture_project.RecordsFragment
-import com.son.lecture_project.SettingsFragment
-import com.son.lecture_project.TimetableFragment
-// ======================================
 import com.son.lecture_project.databinding.ActivityBottomNavBinding
 
-class BottomNavigationActivity : AppCompatActivity() {
+class BottomNavActivity : AppCompatActivity() { // 클래스 이름 수정
 
     private lateinit var binding: ActivityBottomNavBinding
 
@@ -21,17 +15,17 @@ class BottomNavigationActivity : AppCompatActivity() {
         binding = ActivityBottomNavBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setSupportActionBar(binding.topAppBar)
-
         if (savedInstanceState == null) {
-            loadFragment(HomeFragment())
-            binding.bottomNavigation.selectedItemId = R.id.nav_home
+            replaceFragment(HomeFragment())
+            binding.bottomNavigation.selectedItemId = R.id.nav_home 
         }
 
+        // 상단 앱 바의 메뉴 아이템 클릭 리스너 설정
         binding.topAppBar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_notifications -> {
-                    Toast.makeText(this, "알림 버튼이 클릭되었습니다.", Toast.LENGTH_SHORT).show()
+                    // 알림 아이콘을 클릭했을 때의 동작
+                    Toast.makeText(this, "알림 버튼 클릭됨", Toast.LENGTH_SHORT).show()
                     true
                 }
                 else -> false
@@ -43,7 +37,6 @@ class BottomNavigationActivity : AppCompatActivity() {
                 return@setOnItemSelectedListener false
             }
 
-            // 이제 이 부분에서 오류가 사라집니다.
             val selectedFragment: Fragment = when (item.itemId) {
                 R.id.nav_home -> HomeFragment()
                 R.id.nav_timetable -> TimetableFragment()
@@ -52,12 +45,12 @@ class BottomNavigationActivity : AppCompatActivity() {
                 else -> HomeFragment()
             }
 
-            loadFragment(selectedFragment)
+            replaceFragment(selectedFragment)
             true
         }
     }
 
-    private fun loadFragment(fragment: Fragment) {
+    private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
