@@ -1,25 +1,37 @@
-📁 프로젝트 구조
 app/
  └── src/
       └── main/
            ├── java/com/son/lecture_project/
-           │    ├── BottomNavigationActivity.kt   # ✅ 앱의 메인 뼈대(틀) 액티비티
-           │    ├── HomeFragment.kt               # 🏠 1. 홈 화면
-           │    ├── TimetableFragment.kt          # 🗓️ 2. 시간표 화면
-           │    ├── RecordsFragment.kt            # 📝 3. 기록 화면
-           │    └── SettingsFragment.kt           # ⚙️ 4. 설정 화면
+           │    ├── BottomNavigationActivity.kt
+           │    ├── HomeFragment.kt
+           │    ├── TimetableFragment.kt
+           │    ├── RecordsFragment.kt
+           │    └── SettingsFragment.kt
            │
            └── res/
                 ├── layout/
-                │    ├── activity_bottom_nav.xml   # ✅ 하단 네비게이션 포함 메인 레이아웃
-                │    ├── fragment_home.xml         # 홈 화면 UI
-                │    ├── fragment_timetable.xml    # 시간표 화면 UI
-                │    ├── fragment_records.xml      # 기록 화면 UI
-                │    └── fragment_settings.xml     # 설정 화면 UI
+                │    ├── activity_bottom_nav.xml
+                │    ├── fragment_home.xml
+                │    ├── fragment_timetable.xml
+                │    ├── fragment_records.xml
+                │    └── fragment_settings.xml
                 │
                 ├── menu/
-                │    └── bottom_nav_menu.xml       # 하단 네비게이션 메뉴 아이템 정의
+                │    └── bottom_nav_menu.xml
                 │
                 └── color/
-                     └── nav_item_color.xml        # 네비게이션 아이콘/텍스트 컬러 상태 정의
+                     └── nav_item_color.xml
 
+
+
+✔ Description
+
+BottomNavigationActivity: 앱의 메인 Activity (하단 네비게이션 관리)
+
+HomeFragment: 홈 화면 UI
+
+TimetableFragment: 시간표 화면 UI
+
+RecordsFragment: 기록 화면 UI
+
+SettingsFragment: 설정 화면 UI
