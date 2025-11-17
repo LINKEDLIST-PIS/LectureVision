@@ -1,3 +1,4 @@
+```
 app/
  └── src/
       └── main/
@@ -21,7 +22,7 @@ app/
                 │
                 └── color/
                      └── nav_item_color.xml
-
+```
 
 
 ✔ Description
