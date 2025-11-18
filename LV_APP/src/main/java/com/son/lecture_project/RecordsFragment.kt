@@ -1,22 +1,32 @@
 package com.son.lecture_project
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.son.lecture_project.data.model.AttendanceRecord // 데이터 모델 import
 import com.son.lecture_project.databinding.FragmentRecordsBinding
+import com.son.lecture_project.ui.home.Result
+import com.son.lecture_project.ui.records.RecordsViewModel
 
 class RecordsFragment : Fragment() {
 
     private var _binding: FragmentRecordsBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var adapter: RecordsAdapter
-    private val recordItems = mutableListOf<AttendanceRecord>()
+    private val recordsViewModel: RecordsViewModel by viewModels()
+    private lateinit var recordsAdapter: RecordsAdapter
+
+    // Dummy data for class filter - replace with actual data later
+    private val classFilterOptions = mapOf("전체 수업" to "all", "웹 프로그래밍" to "web", "자료구조" to "ds")
+    private val dateFilterOptions = mapOf("전체 기간" to "all", "오늘" to "today", "최근 7일" to "week", "최근 30일" to "month")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -30,39 +40,98 @@ class RecordsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
-        loadRecordsData()
+        setupFilters()
+        // setupClickListeners() // Removed as we now trigger search on filter change
+        observeRecordsResult()
+
+        // Load initial data
+        recordsViewModel.fetchRecords()
     }
 
     private fun setupRecyclerView() {
-        adapter = RecordsAdapter(recordItems)
-        binding.recyclerViewRecords.adapter = adapter
-        binding.recyclerViewRecords.layoutManager = LinearLayoutManager(context)
-    }
-
-    private fun loadRecordsData() {
-        // TODO: 이 부분은 실제 서버나 데이터베이스에서 출석 기록 데이터를 가져와야 합니다.
-        val dummyData = getDummyRecordsData()
-
-        if (dummyData.isEmpty()) {
-            binding.recyclerViewRecords.isVisible = false
-            binding.tvNoRecords.isVisible = true
-        } else {
-            binding.recyclerViewRecords.isVisible = true
-            binding.tvNoRecords.isVisible = false
-            recordItems.clear()
-            recordItems.addAll(dummyData)
-            adapter.notifyDataSetChanged()
+        recordsAdapter = RecordsAdapter(emptyList())
+        binding.rvRecords.apply { // Changed ID from recyclerViewRecords to rvRecords
+            adapter = recordsAdapter
+            layoutManager = LinearLayoutManager(context)
         }
     }
 
-    private fun getDummyRecordsData(): List<AttendanceRecord> {
-        // React 코드의 기록과 유사한 구조의 더미(가짜) 데이터입니다.
-        return listOf(
-            AttendanceRecord(1, "웹 프로그래밍", "2025-11-17", 28, 30, 2),
-            AttendanceRecord(2, "자료구조", "2025-11-16", 29, 30, 1),
-            AttendanceRecord(3, "알고리즘", "2025-11-15", 30, 30, 0),
-            AttendanceRecord(4, "운영체제", "2025-11-14", 25, 30, 5)
-        )
+    private fun setupFilters() {
+        // Class Filter Spinner
+        val classAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, classFilterOptions.keys.toList())
+        classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerClass.adapter = classAdapter // Changed ID from spinnerClassFilter to spinnerClass
+
+        binding.spinnerClass.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                triggerSearch()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        // Date Filter Spinner
+        val dateAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, dateFilterOptions.keys.toList())
+        dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerDate.adapter = dateAdapter // Changed ID from spinnerDateFilter to spinnerDate
+
+        binding.spinnerDate.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                triggerSearch()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+        
+        // Reset Filters Button
+        binding.btnResetFilters.setOnClickListener {
+            binding.spinnerClass.setSelection(0)
+            binding.spinnerDate.setSelection(0)
+            // Selection change will trigger search automatically via listeners
+        }
+    }
+
+    private fun triggerSearch() {
+        val selectedClassKey = binding.spinnerClass.selectedItem as? String ?: return
+        val selectedDateKey = binding.spinnerDate.selectedItem as? String ?: return
+
+        val classId = classFilterOptions[selectedClassKey]
+        val dateFilter = dateFilterOptions[selectedDateKey]
+
+        recordsViewModel.fetchRecords(classId, dateFilter)
+    }
+
+    private fun observeRecordsResult() {
+        recordsViewModel.recordsResult.observe(viewLifecycleOwner) { result ->
+            // There is no progress bar in the new layout for the whole screen, 
+            // but you might want to add one or show a loading state.
+            // For now, just hiding the list on load.
+            when (result) {
+                is Result.Loading -> {
+                    binding.rvRecords.isVisible = false
+                    binding.layoutEmpty.isVisible = false // Changed ID from tvNoRecords to layoutEmpty
+                }
+                is Result.Success -> {
+                    val records = result.data
+                    if (records.isEmpty()) {
+                        binding.layoutEmpty.isVisible = true
+                        binding.rvRecords.isVisible = false
+                    } else {
+                        binding.layoutEmpty.isVisible = false
+                        binding.rvRecords.isVisible = true
+                        recordsAdapter.updateData(records)
+                        
+                        // Update summary text
+                        binding.tvSummary.text = "총 ${records.size}개의 기록"
+                    }
+                }
+                is Result.Error -> {
+                    binding.layoutEmpty.isVisible = true
+                    // You might want to change the empty layout text to show the error message
+                    binding.rvRecords.isVisible = false
+                    Toast.makeText(context, "오류: ${result.exception.message}", Toast.LENGTH_LONG).show()
+                    Log.e("RecordsFragment", "Error fetching records", result.exception)
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {

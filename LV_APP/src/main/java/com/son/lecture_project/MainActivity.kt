@@ -3,10 +3,6 @@ package com.son.lecture_project
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.son.lecture_project.HomeFragment
-import com.son.lecture_project.RecordsFragment
-import com.son.lecture_project.SettingsFragment
-import com.son.lecture_project.TimetableFragment
 import com.son.lecture_project.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {

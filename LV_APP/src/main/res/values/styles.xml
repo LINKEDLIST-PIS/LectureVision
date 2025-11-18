@@ -1,133 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 기본 버튼 스타일 (로그인 버튼과 동일) -->
-    <style name="Widget.App.Button" parent="Widget.Material3.Button">
-        <item name="android:textAppearance">@style/TextAppearance.Material3.TitleMedium</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:paddingTop">14dp</item>
-        <item name="android:paddingBottom">14dp</item>
-        <item name="cornerRadius">16dp</item>
-        <item name="android:backgroundTint">?attr/colorPrimary</item>
-        <item name="android:textColor">?attr/colorOnPrimary</item>
-    </style>
 
-    <!-- 외곽선 버튼 스타일 -->
-    <style name="Widget.App.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:textAppearance">@style/TextAppearance.Material3.TitleMedium</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:paddingTop">14dp</item>
-        <item name="android:paddingBottom">14dp</item>
-        <item name="cornerRadius">16dp</item>
-        <item name="strokeColor">?attr/colorPrimary</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
-    </style>
-
-    <!-- NumberPicker 스타일 -->
-    <style name="AppTheme.NumberPicker" parent="Widget.AppCompat.NumberPicker">
-        <item name="android:textColorPrimary">?attr/colorPrimary</item>
-        <item name="android:textSize">20sp</item>
+    <!-- 기본 버튼 스타일 -->
+    <style name="MyButtonStyle">
+        <item name="android:textAppearance">?android:attr/textAppearanceMedium</item>
         <item name="android:textStyle">bold</item>
     </style>
 
     <!-- 시간표 헤더 스타일 -->
-    <style name="TimetableHeader" parent="Widget.AppCompat.TextView">
+    <style name="TimetableHeader">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:gravity">center</item>
         <item name="android:padding">12dp</item>
-        <item name="android:textColor">#1E293B</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 
     <!-- 기록 화면 아이템 스타일 -->
-    <style name="RecordItem" parent="">
+    <style name="RecordItem">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:orientation">vertical</item>
         <item name="android:gravity">center</item>
     </style>
-    <style name="RecordItem.Title" parent="Widget.AppCompat.TextView">
+    <style name="RecordItemTitle">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#6B7280</item>
     </style>
-    <style name="RecordItem.Value" parent="Widget.AppCompat.TextView">
+    <style name="RecordItemValue">
         <item name="android:textSize">20sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">#0ea5e9</item>
     </style>
-    <style name="RecordItem.Value.Dark">
+    <style name="RecordItemValueDark">
         <item name="android:textColor">#1E293B</item>
     </style>
-    <style name="RecordItem.Value.Red">
+    <style name="RecordItemValueRed">
         <item name="android:textColor">#EF4444</item>
     </style>
 
-    <!-- ============ 여기에 설정 화면 스타일이 추가되었습니다 ============ -->
-
-    <!-- 설정 화면 카드 기본 스타일 -->
-    <style name="SettingsCard" parent="Widget.Material3.CardView.Elevated">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginBottom">16dp</item>
-        <item name="cardCornerRadius">16dp</item>
-        <item name="cardElevation">0dp</item>
-        <item name="strokeWidth">1dp</item>
-        <item name="strokeColor">#E5E7EB</item>
-    </style>
-
-    <!-- 설정 항목 한 줄 스타일 -->
-    <style name="SettingsItem">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:orientation">horizontal</item>
-        <item name="android:gravity">center_vertical</item>
-    </style>
-
-    <style name="SettingsItem.Icon" parent="Widget.AppCompat.ImageView">
-        <item name="android:layout_width">24dp</item>
-        <item name="android:layout_height">24dp</item>
-        <item name="android:layout_marginEnd">16dp</item>
-        <item name="tint">?attr/colorPrimary</item>
-    </style>
-
-    <style name="SettingsItem.TextContainer">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:orientation">vertical</item>
-    </style>
-
-    <style name="SettingsItem.Title" parent="Widget.AppCompat.TextView">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">#1E293B</item>
-    </style>
-
-    <style name="SettingsItem.Subtitle" parent="Widget.AppCompat.TextView">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">#6B7280</item>
-    </style>
-
-    <!-- 설정 화면의 텍스트 버튼 스타일 -->
-    <style name="SettingsItem.Button" parent="Widget.AppCompat.TextView">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:paddingVertical">12dp</item>
-        <item name="android:background">?attr/selectableItemBackground</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">#1E293B</item>
-        <item name="android:drawablePadding">16dp</item>
-        <item name="drawableTint">#6B7280</item>
-    </style>
-
-    <!-- 설정 화면의 구분선 스타일 -->
-    <style name="SettingsDivider">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">1dp</item>
-        <item name="android:background">#E5E7EB</item>
-        <item name="android:layout_marginVertical">12dp</item>
-    </style>
 </resources>

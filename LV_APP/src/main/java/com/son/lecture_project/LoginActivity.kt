@@ -2,27 +2,31 @@ package com.son.lecture_project
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.databinding.DataBindingUtil
-import com.son.lecture_project.data.api.ApiClient
-import com.son.lecture_project.data.api.ApiResponse
-import com.son.lecture_project.data.api.AuthService
-import com.son.lecture_project.data.api.LoginRequest
 import com.son.lecture_project.databinding.ActivityLoginBinding
-import com.son.lecture_project.SignupActivity
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.son.lecture_project.ui.auth.LoginViewModel
+import com.son.lecture_project.ui.home.Result
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private val loginViewModel: LoginViewModel by viewModels()
+    private val TAG = "LoginActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login)
 
+        setupClickListeners()
+        observeLoginResult()
+    }
+
+    private fun setupClickListeners() {
         binding.buttonLogin.setOnClickListener {
             val email = binding.editLoginEmail.text.toString().trim()
             val password = binding.editLoginPassword.text.toString().trim()
@@ -37,34 +41,36 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val request = LoginRequest(email, password)
-            val apiService = ApiClient.instance.create(AuthService::class.java)
-
-            apiService.loginUser(request).enqueue(object : Callback<ApiResponse> {
-                override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                    if (response.isSuccessful && response.body()?.success == true) {
-                        Toast.makeText(this@LoginActivity, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                        // MainActivity -> BottomNavActivity로 최종 수정
-                        startActivity(Intent(this@LoginActivity, BottomNavActivity::class.java)) 
-                        finish()
-                    } else {
-                        Toast.makeText(
-                            this@LoginActivity,
-                            "로그인 실패: ${response.body()?.message ?: "알 수 없는 오류"}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                    Toast.makeText(this@LoginActivity, "서버 연결 실패: ${t.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
+            loginViewModel.login(email, password)
         }
 
-        // 회원가입 링크 클릭 시 SignupActivity로 이동
         binding.textSignupLink.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
+        }
+    }
+
+    private fun observeLoginResult() {
+        loginViewModel.loginResult.observe(this) { result ->
+            when (result) {
+                is Result.Loading -> {
+                    binding.progressBar.isVisible = true
+                    binding.buttonLogin.isEnabled = false
+                }
+                is Result.Success -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonLogin.isEnabled = true
+                    Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                    // TODO: The received token (result.data.accessToken) should be saved securely.
+                    startActivity(Intent(this, BottomNavActivity::class.java))
+                    finish()
+                }
+                is Result.Error -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonLogin.isEnabled = true
+                    Toast.makeText(this, "로그인 실패: ${result.exception.message}", Toast.LENGTH_LONG).show()
+                    Log.e(TAG, "Login Error", result.exception)
+                }
+            }
         }
     }
 }

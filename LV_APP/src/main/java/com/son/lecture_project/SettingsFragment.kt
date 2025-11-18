@@ -2,20 +2,27 @@ package com.son.lecture_project
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.ui.semantics.text
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.FragmentSettingsBinding
+import com.son.lecture_project.ui.home.Result
+import com.son.lecture_project.ui.settings.SettingsViewModel
 
 class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
+
+    private val settingsViewModel: SettingsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -28,16 +35,13 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadUserData()
         setupClickListeners()
-    }
+        observeUserResult()
 
-    private fun loadUserData() {
-        // TODO: 실제로는 SharedPreferences나 데이터베이스에서 사용자 정보를 불러와야 합니다.
-        binding.tvUserName.text = "홍길동"
-        binding.tvUserEmail.text = "gildong@gnu.ac.kr"
-
-        // 앱 버전 정보 표시
+        // Request user data when the view is created
+        settingsViewModel.fetchUserData()
+        
+        // Display app version
         try {
             val packageInfo = requireActivity().packageManager.getPackageInfo(requireActivity().packageName, 0)
             binding.tvVersion.text = packageInfo.versionName
@@ -46,29 +50,47 @@ class SettingsFragment : Fragment() {
         }
     }
 
-    private fun setupClickListeners() {
+    private fun observeUserResult() {
+        settingsViewModel.userResult.observe(viewLifecycleOwner) { result ->
+            when (result) {
+                is Result.Loading -> {
+                    binding.tvUserName.text = "로딩 중..."
+                    binding.tvUserEmail.text = "..."
+                    // Optionally, show a progress bar
+                }
+                is Result.Success -> {
+                    val user = result.data
+                    // The API provides email, but not a name field.
+                    // Using the email prefix as a temporary name.
+                    binding.tvUserName.text = user.email.split("@").firstOrNull() ?: "사용자"
+                    binding.tvUserEmail.text = user.email
+                }
+                is Result.Error -> {
+                    binding.tvUserName.text = "사용자 정보 로드 실패"
+                    binding.tvUserEmail.text = "-"
+                    Toast.makeText(context, "오류: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("SettingsFragment", "Error fetching user data", result.exception)
+                }
+            }
+        }
+    }
 
+    private fun setupClickListeners() {
         binding.btnEditProfile.setOnClickListener {
-            // TODO: React 코드의 Dialog처럼, 회원정보 변경을 위한 다이얼로그나 새 화면을 띄워야 합니다.
             Toast.makeText(context, "회원정보 편집 기능 구현 필요", Toast.LENGTH_SHORT).show()
         }
 
-
         binding.switchDarkMode.isChecked = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES
         binding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
+            AppCompatDelegate.setDefaultNightMode(
+                if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            )
         }
-
 
         binding.switchNotifications.setOnCheckedChangeListener { _, isChecked ->
             val message = if (isChecked) "알림이 켜졌습니다." else "알림이 꺼졌습니다."
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
-
 
         binding.btnLogout.setOnClickListener {
             showLogoutConfirmDialog()
@@ -80,11 +102,9 @@ class SettingsFragment : Fragment() {
             .setTitle("로그아웃")
             .setMessage("정말로 로그아웃 하시겠습니까?")
             .setPositiveButton("로그아웃") { _, _ ->
-                // TODO: 저장된 로그인 토큰 삭제 등 실제 로그아웃 로직 구현
-
+                TokenManager.clearToken()
 
                 val intent = Intent(requireActivity(), LoginActivity::class.java).apply {
-
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
                 startActivity(intent)

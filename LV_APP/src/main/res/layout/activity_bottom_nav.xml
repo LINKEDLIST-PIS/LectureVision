@@ -5,48 +5,83 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#f5f5f5"
     tools:context=".BottomNavActivity">
 
-    <!-- 1. 상단바 (Top App Bar) -->
+    <!-- ================= 1. 상단바 (Top App Bar) ================= -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:background="#f5f5f5"
+        app:elevation="0dp"
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/sky_blue_500"
-            app:menu="@menu/top_app_bar_menu"
-            app:title="Lecture Vision"
-            app:titleTextColor="@android:color/white" />
+            app:menu="@menu/top_app_bar_menu">
 
+            <!-- "Lecture Vision" 타이틀 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lecture Vision"
+                android:textSize="22sp"
+                android:textColor="#1E293B"
+                android:textStyle="bold"
+                android:layout_gravity="start" />
+
+            <!-- 알림 아이콘 버튼 -->
+            <!-- top_app_bar_menu에 이미 action_notifications가 있으므로 중복될 수 있음. 
+                 하지만 기존 레이아웃에 ImageView로 별도로 추가되어 있었음.
+                 메뉴 아이템으로 관리할지, 별도 뷰로 관리할지 결정해야 함.
+                 BottomNavActivity 코드에서는 R.id.action_notifications 메뉴 아이템 클릭을 처리하고 있음.
+                 따라서 여기서는 ImageView를 제거하고 메뉴 아이템만 사용하는 것이 맞을 수도 있음.
+                 하지만 디자인상 위치를 잡기 위해 ImageView를 뒀을 수도 있음.
+                 일단 app:menu를 추가했으므로, 메뉴 아이템도 보일 것임. 
+                 ImageView와 겹쳐 보일 수 있으니 확인 필요.
+                 기존 코드: ImageView id가 button_notifications 였음.
+                 BottomNavActivity 코드: binding.topAppBar.setOnMenuItemClickListener { ... R.id.action_notifications ... }
+                 즉, 메뉴 아이템 클릭을 처리함. ImageView 클릭 처리는 코드에 없음.
+                 따라서 ImageView는 삭제하고 메뉴 아이템을 사용하는 것이 코드와 일치함.
+            -->
+
+        </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- 2. 프래그먼트가 교체될 공간 -->
+    <!-- 구분선 (상단바와 내용 분리) -->
+    <View
+        android:id="@+id/divider"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="#E5E7EB"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ================= 2. 프래그먼트가 교체될 공간 ================= -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintTop_toBottomOf="@id/divider"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 3. 하단 네비게이션 바 -->
+    <!-- ================= 3. 하단 네비게이션 바 ================= -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
-        android:layout_width="0dp" 
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" 
-        app:layout_constraintEnd_toEndOf="parent"   
+        android:background="@android:color/white"
+        app:elevation="8dp"
         app:itemIconTint="@color/nav_item_color"
         app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:menu="@menu/bottom_nav_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

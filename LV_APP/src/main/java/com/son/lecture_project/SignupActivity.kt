@@ -1,93 +1,76 @@
 package com.son.lecture_project
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.son.lecture_project.data.api.*
+import androidx.core.view.isVisible
 import com.son.lecture_project.databinding.ActivitySignupBinding
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.son.lecture_project.ui.auth.SignupViewModel
+import com.son.lecture_project.ui.home.Result
 
 class SignupActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignupBinding
-    private val authService by lazy { ApiClient.instance.create(AuthService::class.java) }
-    private var isCodeSent = false
+    private val signupViewModel: SignupViewModel by viewModels()
+    private val TAG = "SignupActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 이메일 인증 버튼
-        binding.buttonSendCode.setOnClickListener {
-            val email = binding.editSignupEmail.text.toString().trim()
-            if (email.isNotBlank()) {
-                sendVerificationEmail(email)
-            } else {
-                Toast.makeText(this, "이메일을 입력해주세요", Toast.LENGTH_SHORT).show()
-            }
-        }
+        setupClickListeners()
+        observeSignupResult()
+    }
 
-        // 회원가입 버튼
+    private fun setupClickListeners() {
         binding.buttonSignup.setOnClickListener {
-            val name = binding.editSignupName.text.toString().trim()
             val email = binding.editSignupEmail.text.toString().trim()
             val password = binding.editSignupPassword.text.toString().trim()
+            val passwordConfirm = binding.editSignupPasswordConfirm.text.toString().trim()
 
-            if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && isCodeSent) {
-                signupUser(name, email, password)
-            } else if (!isCodeSent) {
-                Toast.makeText(this, "이메일 인증을 먼저 진행해주세요", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "모든 항목을 입력해주세요", Toast.LENGTH_SHORT).show()
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "이메일과 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+
+            if (!email.lowercase().endsWith("@gnu.ac.kr")) {
+                Toast.makeText(this, "GNU 이메일만 사용 가능합니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (password != passwordConfirm) {
+                Toast.makeText(this, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // According to the API spec, calling signup will trigger the verification email.
+            signupViewModel.signup(email, password)
         }
     }
 
-    private fun sendVerificationEmail(email: String) {
-        val request = EmailRequest(email)
-        authService.sendVerificationEmail(request).enqueue(object : Callback<ApiResponse> {
-            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(this@SignupActivity, "인증메일 전송됨", Toast.LENGTH_SHORT).show()
-                    isCodeSent = true
-                    binding.buttonSendCode.isEnabled = false
-                } else {
-                    Toast.makeText(
-                        this@SignupActivity,
-                        "전송 실패: ${response.body()?.message ?: "알 수 없음"}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+    private fun observeSignupResult() {
+        signupViewModel.signupResult.observe(this) { result ->
+            when (result) {
+                is Result.Loading -> {
+                    binding.progressBar.isVisible = true
+                    binding.buttonSignup.isEnabled = false
+                }
+                is Result.Success -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonSignup.isEnabled = true
+                    Toast.makeText(this, "회원가입 요청이 성공했습니다. 이메일을 확인하여 계정을 활성화해주세요.", Toast.LENGTH_LONG).show()
+                    finish() // Close SignupActivity and return to LoginActivity
+                }
+                is Result.Error -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonSignup.isEnabled = true
+                    Toast.makeText(this, "회원가입 실패: ${result.exception.message}", Toast.LENGTH_LONG).show()
+                    Log.e(TAG, "Signup Error", result.exception)
                 }
             }
-
-            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                Toast.makeText(this@SignupActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
-    private fun signupUser(name: String, email: String, password: String) {
-        val request = SignupRequest(name, email, password)
-        authService.signupUser(request).enqueue(object : Callback<ApiResponse> {
-            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(this@SignupActivity, "회원가입 성공", Toast.LENGTH_SHORT).show()
-                    finish() // 로그인 화면으로 돌아가기
-                } else {
-                    Toast.makeText(
-                        this@SignupActivity,
-                        "회원가입 실패: ${response.body()?.message ?: "알 수 없음"}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                Toast.makeText(this@SignupActivity, "네트워크 오류", Toast.LENGTH_SHORT).show()
-            }
-        })
+        }
     }
 }

@@ -1,30 +1,21 @@
 package com.son.lecture_project
 
-import android.app.Activity
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import com.son.lecture_project.data.api.ApiClient
-import com.son.lecture_project.data.api.AuthService
-import com.son.lecture_project.data.api.MeasureResultResponse
-import com.son.lecture_project.data.api.TicketResponse
+import androidx.fragment.app.viewModels
 import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.data.model.Notice
 import com.son.lecture_project.databinding.FragmentHomeBinding
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.son.lecture_project.ui.home.HomeViewModel
+import com.son.lecture_project.ui.home.Result
 import java.util.Calendar
 
 class HomeFragment : Fragment() {
@@ -32,25 +23,7 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-
-    private val authService by lazy { ApiClient.instance.create(AuthService::class.java) }
-
-
-    private val pollingHandler = Handler(Looper.getMainLooper())
-    private var pollingRunnable: Runnable? = null
-
-
-    private val timerActivityResultLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-
-            startMeasurementProcess()
-        } else {
-
-            Toast.makeText(context, "출석 체크가 취소되었습니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
+    private val homeViewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -63,41 +36,57 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initializeViews()
         setupClickListeners()
-        loadHomePageData()
+        observeMeasurementResult()
+        loadStaticHomePageData()
     }
 
-    /**
-     * NumberPicker 같은 UI 요소들을 초기 설정합니다.
-     */
-    private fun initializeViews() {
-        binding.pickerMinutes.minValue = 1
-        binding.pickerMinutes.maxValue = 180
-        binding.pickerMinutes.value = 90 // 기본값 90분
-    }
-
-    /**
-     * 버튼 클릭 이벤트를 설정합니다.
-     */
     private fun setupClickListeners() {
-
         binding.buttonStartTimer.setOnClickListener {
-            val intent = Intent(requireActivity(), TimerActivity::class.java).apply {
-
-                putExtra("TIMER_MINUTES", binding.pickerMinutes.value.toLong())
-            }
-            timerActivityResultLauncher.launch(intent)
+            homeViewModel.startMeasurement()
         }
     }
 
+    private fun observeMeasurementResult() {
+        homeViewModel.measurementResult.observe(viewLifecycleOwner) { result ->
+            when (result) {
+                is Result.Loading -> {
+                    binding.progressBar.isVisible = true
+                    binding.buttonStartTimer.isEnabled = false
+                    binding.textPresentCount.text = "..."
+                    binding.textTotalCount.text = "..."
+                    binding.textAbsentCount.text = "..."
+                }
+                is Result.Success -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonStartTimer.isEnabled = true
 
+                    val presentCount = result.data
+                    binding.textPresentCount.text = presentCount.toString()
 
-    private fun loadHomePageData() {
+                    // TODO: The total count is not available from the current API.
+                    binding.textTotalCount.text = "-"
+                    binding.textAbsentCount.text = "-"
+
+                    Toast.makeText(context, "인원수 측정이 완료되었습니다!", Toast.LENGTH_SHORT).show()
+                }
+                is Result.Error -> {
+                    binding.progressBar.isVisible = false
+                    binding.buttonStartTimer.isEnabled = true
+                    binding.textPresentCount.text = "-"
+                    binding.textTotalCount.text = "-"
+                    binding.textAbsentCount.text = "-"
+                    Toast.makeText(context, "오류 발생: ${result.exception.message}", Toast.LENGTH_LONG).show()
+                    Log.e("HomeFragment", "Measurement Error", result.exception)
+                }
+            }
+        }
+    }
+
+    private fun loadStaticHomePageData() {
         updateTodaySchedule()
         updateNotices()
     }
-
 
     private fun updateTodaySchedule() {
         val calendar = Calendar.getInstance()
@@ -117,7 +106,6 @@ class HomeFragment : Fragment() {
             binding.layoutScheduleItems.isVisible = true
             binding.layoutScheduleItems.removeAllViews()
 
-            // 동적으로 수업 목록 TextView를 생성하여 추가
             todayClasses.forEach { classItem ->
                 val textView = TextView(context).apply {
                     text = "• ${classItem.name} (${classItem.startTime} - ${classItem.endTime})"
@@ -130,14 +118,10 @@ class HomeFragment : Fragment() {
         }
     }
 
-    /**
-     * 공지사항 데이터를 가져와 UI에 표시합니다.
-     * TODO: 향후 이 부분은 실제 서버 API나 데이터베이스에서 데이터를 가져오도록 수정해야 합니다.
-     */
     private fun updateNotices() {
         val notices = getNoticesFromDummyData()
 
-        binding.layoutNoticeItems.removeAllViews() // 기존 뷰 제거
+        binding.layoutNoticeItems.removeAllViews()
 
         if (notices.isEmpty()) {
             val textView = TextView(context).apply {
@@ -157,8 +141,6 @@ class HomeFragment : Fragment() {
             }
         }
     }
-
-
 
     private fun getTodayClassesFromDummyData(todayName: String): List<ClassSchedule> {
         val allClasses = listOf(
@@ -180,94 +162,8 @@ class HomeFragment : Fragment() {
         )
     }
 
-    // --- 아래는 서버와 통신하는 핵심 로직입니다. ---
-
-    private fun startMeasurementProcess() {
-        binding.textPresentCount.text = "..."
-        binding.textTotalCount.text = "..."
-        binding.textAbsentCount.text = "..."
-
-        authService.startMeasurement().enqueue(object : Callback<TicketResponse> {
-            override fun onResponse(call: Call<TicketResponse>, response: Response<TicketResponse>) {
-                if (response.isSuccessful) {
-                    val ticketId = response.body()?.ticketId
-                    if (ticketId != null) {
-                        startPollingForResult(ticketId)
-                    } else {
-                        updateUiWithError("티켓 발급 실패")
-                    }
-                } else {
-                    updateUiWithError("측정 요청 실패")
-                }
-            }
-
-            override fun onFailure(call: Call<TicketResponse>, t: Throwable) {
-                updateUiWithError("네트워크 오류")
-                Log.e("HomeFragment", "Network Error: ${t.message}")
-            }
-        })
-    }
-
-    private fun startPollingForResult(ticketId: String) {
-        pollingRunnable = object : Runnable {
-            override fun run() {
-                authService.getMeasurementResult(ticketId).enqueue(object : Callback<MeasureResultResponse> {
-                    override fun onResponse(call: Call<MeasureResultResponse>, response: Response<MeasureResultResponse>) {
-                        if (response.isSuccessful) {
-                            val result = response.body()
-                            when (result?.status) {
-                                "COMPLETED" -> {
-                                    updateUiWithResult(result)
-                                    stopPolling()
-                                }
-                                "PENDING" -> {
-                                    pollingHandler.postDelayed(this, 2000) // 2초 후 다시 시도
-                                }
-                                else -> {
-                                    updateUiWithError("측정 실패: ${result?.status}")
-                                    stopPolling()
-                                }
-                            }
-                        } else {
-                            updateUiWithError("결과 조회 실패")
-                            stopPolling()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<MeasureResultResponse>, t: Throwable) {
-                        updateUiWithError("네트워크 오류")
-                        Log.e("HomeFragment", "Polling Network Error: ${t.message}")
-                        stopPolling()
-                    }
-                })
-            }
-        }
-        pollingHandler.post(pollingRunnable!!)
-    }
-
-    private fun stopPolling() {
-        pollingRunnable?.let { pollingHandler.removeCallbacks(it) }
-        pollingRunnable = null
-    }
-
-    private fun updateUiWithResult(result: MeasureResultResponse) {
-        binding.textPresentCount.text = result.presentCount.toString()
-        binding.textTotalCount.text = result.totalCount.toString()
-        binding.textAbsentCount.text = result.absentCount.toString()
-        Toast.makeText(context, "인원수 측정이 완료되었습니다!", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun updateUiWithError(message: String) {
-        binding.textPresentCount.text = "-"
-        binding.textTotalCount.text = "-"
-        binding.textAbsentCount.text = "-"
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        stopPolling() // 프래그먼트가 사라질 때 폴링 중단 (메모리 누수 방지)
         _binding = null
     }
 }
-

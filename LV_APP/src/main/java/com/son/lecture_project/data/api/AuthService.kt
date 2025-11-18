@@ -7,7 +7,7 @@ import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
 
-// --- 기존 데이터 클래스 ---
+// --- 데이터 모델들 (변경 없음) ---
 data class LoginRequest(
     val email: String,
     val password: String
@@ -17,54 +17,41 @@ data class SignupRequest(
     val email: String,
     val password: String
 )
-
 data class EmailRequest(
     val email: String
 )
-
-// --- 인원수 측정을 위해 새로 추가된 데이터 클래스 ---
-
-// 티켓 발급 응답
 data class TicketResponse(
     val ticketId: String
 )
-
-// 측정 결과 응답
 data class MeasureResultResponse(
-    val status: String, // "PENDING", "COMPLETED", "FAILED"
+    val status: String,
     val presentCount: Int,
     val totalCount: Int,
     val absentCount: Int
 )
 
+/**
+ * 서버와 통신하기 위한 API 인터페이스
+ * 실제 서버의 엔드포인트에 맞게 모두 수정되었습니다.
+ */
 interface AuthService {
 
-    // --- 기존 함수들 ---
     @Headers("Content-Type: application/json")
-    @POST("accounts/login")
+    @POST("api/v1/auth/login")
     fun loginUser(@Body request: LoginRequest): Call<ApiResponse>
 
     @Headers("Content-Type: application/json")
-    @POST("accounts/signup")
+    @POST("api/v1/auth/signup")
     fun signupUser(@Body request: SignupRequest): Call<ApiResponse>
 
     @Headers("Content-Type: application/json")
-    @POST("accounts/send_verification_email")
+    @POST("api/v1/auth/send-verification-email")
     fun sendVerificationEmail(@Body request: EmailRequest): Call<ApiResponse>
 
-    // --- 인원수 측정을 위해 새로 추가된 함수들 ---
-
-    /**
-     * API 서버에 인원수 측정을 요청하고 티켓을 발급받습니다.
-     */
     @Headers("Content-Type: application/json")
-    @POST("measurement/start")
+    @POST("api/v1/measurement/start")
     fun startMeasurement(): Call<TicketResponse>
 
-    /**
-     * 발급받은 티켓으로 측정 결과를 조회합니다.
-     * @param ticketId startMeasurement()를 통해 받은 티켓 ID
-     */
-    @GET("measurement/result/{ticketId}")
+    @GET("api/v1/measurement/result/{ticketId}")
     fun getMeasurementResult(@Path("ticketId") ticketId: String): Call<MeasureResultResponse>
 }
