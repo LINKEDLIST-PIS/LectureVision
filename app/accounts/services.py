@@ -9,7 +9,7 @@ from .models import User
 from .schemas import UserCreate, UserLogin
 from .email_utils import send_verification_email
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 SECRET_KEY = "JWT_SECRET"
 ALGORITHM = "HS256"
@@ -19,6 +19,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 async def create_user(db: Session, user_in: UserCreate):
     if not user_in.email.endswith("@gnu.ac.kr"):
         raise HTTPException(status_code=400, detail="gnu.ac.kr 이메일만 허용됩니다.")
+
+    if len(user_in.password) > 20:
+        raise HTTPException(status_code=400, detail="비밀번호는 20자리 이하만 가능합니다.")
+
+    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="이미 가입된 이메일입니다.")
 
     hashed_pw = pwd_context.hash(user_in.password)
     token = str(uuid.uuid4())

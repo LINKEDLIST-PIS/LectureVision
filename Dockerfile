@@ -6,11 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     default-mysql-client \
     curl \
+    sqlite3 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
 
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy psycopg[binary] aiomysql pydantic-settings alembic python-multipart python-jose[cryptography] slowapi passlib[bcrypt] email-validator pyjwt fastapi-mail redis
+RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy psycopg[binary] aiomysql pydantic-settings alembic python-multipart python-jose[cryptography] slowapi argon2-cffi passlib[bcrypt] email-validator pyjwt fastapi-mail redis
 
 RUN useradd -m -u 1001 -g 100 appuser
 
