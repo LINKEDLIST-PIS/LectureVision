@@ -36,7 +36,10 @@ async def rate_limit_handler(request, exc):
 
 @router.post("/token")
 def issue_token(model_server_id: str):
-    access_token = create_access_token({"sub": model_server_id})
+    access_token = create_access_token(
+        {"sub": model_server_id},
+        audience="server-client"
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/upload", response_model=schemas.UploadResponse, dependencies=[Depends(verify_bearer)])

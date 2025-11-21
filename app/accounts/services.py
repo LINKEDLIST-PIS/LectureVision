@@ -5,6 +5,7 @@ from jose import jwt
 from datetime import datetime, timedelta
 import uuid
 
+from app.security import create_access_token
 from .models import User
 from .schemas import UserCreate, UserLogin
 from .email_utils import send_verification_email
@@ -66,15 +67,12 @@ def authenticate_user(db: Session, email: str, password: str):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이메일 인증 필요")
     return user
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
 def login_user(db: Session, user_in: UserLogin):
     user = authenticate_user(db, user_in.email, user_in.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="이메일 또는 비밀번호 오류")
-    access_token = create_access_token(data={"sub": str(user.id)})
+    access_token = create_access_token(
+        data={"sub": str(user.email)},
+        audience="mobile-client"
+    )
     return {"access_token": access_token, "token_type": "bearer"}
