@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app import schemas
 from app.services import uploads
-from app.security import create_access_token, verify_bearer
+from app.security import AUDIENCE_SERVER, create_access_token, verify_bearer
 from app.hmac_utils import verify_hmac_signature
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -56,6 +56,9 @@ async def upload_file(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     payload: dict = Depends(verify_bearer)
 ):
+    if payload.get("aud") != AUDIENCE_SERVER:
+        raise HTTPException(status_code=403, detail="Only server tokens can upload")
+
     model_server_id = payload["sub"]
     start_time = time.time()
 
@@ -69,7 +72,6 @@ async def upload_file(
         raise HTTPException(status_code=415, detail="Unsupported file type")
 
     content = await file.read()
-
     verify_hmac_signature(x_signature, os.getenv("HMAC_SECRET", "").encode(), content, x_timestamp)
     file.file.seek(0)
 
@@ -78,10 +80,11 @@ async def upload_file(
         return schemas.UploadResponse(**dict(existing))
 
     upload = await uploads.create_upload(
-        db, file, file.filename, people_count, idempotency_key=idempotency_key, client_id=client_id
+        db, file, file.filename, people_count,
+        idempotency_key=idempotency_key, client_id=client_id
     )
 
-    background_tasks.add_task(lambda: print(f"[POST PROCESS] Upload {upload.id} ?袁⑹퓗????쎈뻬"))
+    background_tasks.add_task(lambda: print(f"[POST PROCESS] Upload {upload.id}"))
 
     elapsed = (time.time() - start_time) * 1000
     logging.info(
