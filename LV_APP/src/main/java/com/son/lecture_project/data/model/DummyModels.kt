@@ -2,26 +2,7 @@ package com.son.lecture_project.data.model
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * 시간표 정보를 담는 데이터 클래스
- */
-data class ClassSchedule(
-    val id: Int,
-    val name: String,
-    val day: String,
-    val startTime: String,
-    val endTime: String,
-    val color: String
-)
-
-/**
- * 공지사항 정보를 담는 데이터 클래스
- */
-data class Notice(
-    val id: Int,
-    val title: String,
-    val date: String
-)
+// Notice와 ClassSchedule은 별도 파일(Notice.kt, ClassSchedule.kt)로 분리되었습니다.
 
 // --- API-related data models ---
 
@@ -29,6 +10,7 @@ data class Notice(
 data class SignUpRequest(
     val email: String,
     val password: String
+    // name field removed to match strict API example
 )
 
 data class SignUpResponse(
@@ -76,11 +58,6 @@ data class Upload(
     val uploadedAt: String,
     @SerializedName("client_id")
     val clientId: String
-)
-
-// Ticket
-data class Ticket(
-    val ticket: String
 )
 
 // Token for Model Server

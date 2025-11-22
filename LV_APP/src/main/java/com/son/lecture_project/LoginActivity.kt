@@ -7,7 +7,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import androidx.databinding.DataBindingUtil
+import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.ActivityLoginBinding
 import com.son.lecture_project.ui.auth.LoginViewModel
 import com.son.lecture_project.ui.home.Result
@@ -20,7 +20,8 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_login)
+        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         setupClickListeners()
         observeLoginResult()
@@ -28,23 +29,18 @@ class LoginActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.buttonLogin.setOnClickListener {
-            val email = binding.editLoginEmail.text.toString().trim()
-            val password = binding.editLoginPassword.text.toString().trim()
+            val email = binding.editLoginEmail.text.toString().trim() // Changed ID: editEmail -> editLoginEmail
+            val password = binding.editLoginPassword.text.toString().trim() // Changed ID: editPassword -> editLoginPassword
 
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "이메일과 비밀번호를 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            if (!email.lowercase().endsWith("@gnu.ac.kr")) {
-                Toast.makeText(this, "GNU 이메일만 사용 가능합니다.", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
             loginViewModel.login(email, password)
         }
 
-        binding.textSignupLink.setOnClickListener {
+        binding.textSignupLink.setOnClickListener { // Changed ID: textSignup -> textSignupLink
             startActivity(Intent(this, SignupActivity::class.java))
         }
     }
@@ -59,10 +55,11 @@ class LoginActivity : AppCompatActivity() {
                 is Result.Success -> {
                     binding.progressBar.isVisible = false
                     binding.buttonLogin.isEnabled = true
-                    Toast.makeText(this, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                    // TODO: The received token (result.data.accessToken) should be saved securely.
-                    startActivity(Intent(this, BottomNavActivity::class.java))
-                    finish()
+                    
+                    // Save the token
+                    TokenManager.saveToken(result.data.accessToken)
+                    
+                    navigateToMain()
                 }
                 is Result.Error -> {
                     binding.progressBar.isVisible = false
@@ -72,5 +69,12 @@ class LoginActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun navigateToMain() {
+        val intent = Intent(this, BottomNavActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#f0f4f8"
-    tools:context=".HomeFragment">
+    tools:context=".HomeScreen">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -17,83 +17,106 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- ============== 1. 공지사항 카드 ============== -->
+            <!-- ============== 0. 공지사항 섹션 ============== -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_notice"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:cardElevation="2dp"
                 app:layout_constraintTop_toTopOf="parent"
-                app:strokeWidth="0dp">
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:strokeColor="@color/stroke_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:text="📢 공지사항"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
+                    
                     <LinearLayout
-                        android:id="@+id/layout_notice_items"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="60dp"
-                        android:orientation="vertical" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+                        
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/ic_bell"
+                            app:tint="@color/sky_blue_500"
+                            android:layout_marginEnd="8dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/home_notice_title"
+                            android:textSize="20sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+                    
+                    <!-- 공지사항 내용이 들어갈 곳 -->
+                    <TextView
+                        android:id="@+id/tv_latest_notice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_no_notice"
+                        android:textColor="#64748B"
+                        android:textSize="16sp"
+                        android:maxLines="2"
+                        android:ellipsize="end"/>
+                        
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ============== 2. 출석 현황 그리드 (직접 구현) ============== -->
+            <!-- ============== 1. 출석 현황 그리드 ============== -->
             <LinearLayout
                 android:id="@+id/layout_attendance_grid"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                app:layout_constraintTop_toBottomOf="@id/card_notice"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/card_notice">
+                app:layout_constraintStart_toStartOf="parent">
 
                 <!-- 현재 인원 카드 -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_margin="4dp"
+                    android:layout_marginEnd="8dp"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/stroke_color"
+                    app:strokeWidth="1dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
                         <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:layout_marginBottom="8dp"
                             android:src="@drawable/ic_users" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="현재 인원"
-                            android:textSize="14sp" />
+                            android:text="@string/home_current_people"
+                            android:textSize="16sp" />
                         <TextView
                             android:id="@+id/text_present_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="-"
-                            android:textSize="24sp"
+                            android:textSize="28sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -103,31 +126,33 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_margin="4dp"
+                    android:layout_marginHorizontal="8dp"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/stroke_color"
+                    app:strokeWidth="1dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
                         <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:layout_marginBottom="8dp"
                             android:src="@drawable/ic_users" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="총 인원"
-                            android:textSize="14sp" />
+                            android:text="@string/home_total_people"
+                            android:textSize="16sp" />
                         <TextView
                             android:id="@+id/text_total_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="-"
-                            android:textSize="24sp"
+                            android:textSize="28sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -137,56 +162,59 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_margin="4dp"
+                    android:layout_marginStart="8dp"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="4dp">
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/stroke_color"
+                    app:strokeWidth="1dp">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:gravity="center"
-                        android:padding="16dp">
+                        android:padding="20dp">
                         <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:layout_marginBottom="8dp"
                             android:src="@drawable/ic_usersx" />
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="결석"
-                            android:textSize="14sp" />
+                            android:text="@string/home_absent"
+                            android:textSize="16sp" />
                         <TextView
                             android:id="@+id/text_absent_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="-"
-                            android:textColor="@android:color/holo_red_light"
-                            android:textSize="24sp"
+                            android:textColor="@color/red_500"
+                            android:textSize="28sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
 
-            <!-- ============== 3. 출석 타이머 카드 ============== -->
+            <!-- ============== 2. 출석 타이머 카드 ============== -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_timer"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
+                app:cardElevation="2dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/layout_attendance_grid"
-                app:strokeWidth="0dp">
+                app:strokeColor="@color/stroke_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -196,18 +224,18 @@
                         android:orientation="horizontal">
 
                         <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:contentDescription="타이머"
-                            android:src="@android:drawable/ic_lock_idle_alarm"
-                            app:tint="#38bdf8" />
+                            android:src="@drawable/ic_clock"
+                            app:tint="@color/sky_blue_500" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:text="출석 타이머"
-                            android:textSize="18sp"
+                            android:text="@string/home_timer_title"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
@@ -215,7 +243,7 @@
                         android:id="@+id/layout_time_picker_group"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="20dp"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
                         android:visibility="visible">
@@ -223,13 +251,13 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="수업 시간 설정"
-                            android:textSize="14sp" />
+                            android:text="@string/home_timer_setting"
+                            android:textSize="16sp" />
 
                         <NumberPicker
                             android:id="@+id/picker_minutes"
                             android:layout_width="wrap_content"
-                            android:layout_height="120dp" />
+                            android:layout_height="140dp" />
                     </LinearLayout>
 
                     <TextView
@@ -237,8 +265,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="16dp"
-                        android:textSize="48sp"
+                        android:layout_marginTop="20dp"
+                        android:textSize="56sp"
                         android:textStyle="bold"
                         android:visibility="gone"
                         tools:text="89:59"
@@ -247,43 +275,43 @@
                     <Button
                         android:id="@+id/button_start_timer"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="출석 체크 시작" />
+                        android:layout_height="64dp"
+                        android:layout_marginTop="20dp"
+                        android:backgroundTint="@color/btn_primary"
+                        android:text="@string/home_timer_start_btn"
+                        android:textSize="18sp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ============== 4. 오늘의 시간표 카드 ============== -->
+            <!-- ============== 3. 오늘의 시간표 카드 ============== -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_schedule"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
+                app:cardElevation="2dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/card_timer"
-                app:strokeWidth="0dp">
+                app:strokeColor="@color/stroke_color"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/text_today_schedule_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:drawableStart="@android:drawable/ic_menu_my_calendar"
-                        android:drawablePadding="12dp"
-                        android:gravity="center_vertical"
-                        android:textSize="18sp"
+                        android:layout_marginBottom="16dp"
+                        android:textSize="20sp"
                         android:textStyle="bold"
-                        tools:text="📅 오늘의 시간표 (목요일)" />
+                        android:text="@string/home_today_schedule_title" />
 
                     <LinearLayout
                         android:id="@+id/layout_schedule_items"
@@ -297,8 +325,8 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:paddingVertical="24dp"
-                        android:text="오늘은 예정된 수업이 없습니다."
-                        android:textSize="14sp"
+                        android:text="@string/home_no_schedule"
+                        android:textSize="16sp"
                         android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -307,7 +335,7 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 로딩 인디케이터 (초기에는 숨김) -->
+    <!-- 로딩 인디케이터 -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"

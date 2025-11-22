@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.son.lecture_project.databinding.ActivitySignupBinding
@@ -27,12 +28,13 @@ class SignupActivity : AppCompatActivity() {
 
     private fun setupClickListeners() {
         binding.buttonSignup.setOnClickListener {
+            val name = binding.editSignupName.text.toString().trim()
             val email = binding.editSignupEmail.text.toString().trim()
             val password = binding.editSignupPassword.text.toString().trim()
             val passwordConfirm = binding.editSignupPasswordConfirm.text.toString().trim()
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "이메일과 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
+            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "이름, 이메일, 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -46,8 +48,13 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // According to the API spec, calling signup will trigger the verification email.
-            signupViewModel.signup(email, password)
+            // Call signup with Name
+            signupViewModel.signup(email, password, name)
+        }
+
+        // 로그인 화면으로 이동 (Link)
+        binding.textLoginLink.setOnClickListener {
+            finish()
         }
     }
 
@@ -61,8 +68,17 @@ class SignupActivity : AppCompatActivity() {
                 is Result.Success -> {
                     binding.progressBar.isVisible = false
                     binding.buttonSignup.isEnabled = true
-                    Toast.makeText(this, "회원가입 요청이 성공했습니다. 이메일을 확인하여 계정을 활성화해주세요.", Toast.LENGTH_LONG).show()
-                    finish() // Close SignupActivity and return to LoginActivity
+                    
+                    // Show Alert Dialog for Email Verification instruction
+                    AlertDialog.Builder(this)
+                        .setTitle("회원가입 요청 완료")
+                        .setMessage("회원가입 요청이 성공했습니다.\n이메일에서 인증을 완료해주세요.")
+                        .setPositiveButton("확인") { dialog, _ ->
+                            dialog.dismiss()
+                            finish() // Go back to LoginActivity
+                        }
+                        .setCancelable(false)
+                        .show()
                 }
                 is Result.Error -> {
                     binding.progressBar.isVisible = false

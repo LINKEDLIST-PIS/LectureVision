@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
 
 
         if (savedInstanceState == null) {
-            replaceFragment(HomeFragment())
+            replaceFragment(HomeScreen())
         }
 
         binding.bottomNavigation.setOnItemSelectedListener { item ->
@@ -29,16 +29,16 @@ class MainActivity : AppCompatActivity() {
 
             when (item.itemId) {
 
-                R.id.nav_home -> replaceFragment(HomeFragment())
+                R.id.nav_home -> replaceFragment(HomeScreen())
 
 
-                R.id.nav_timetable -> replaceFragment(TimetableFragment())
+                R.id.nav_timetable -> replaceFragment(TimetableScreen())
 
 
-                R.id.nav_records -> replaceFragment(RecordsFragment())
+                R.id.nav_records -> replaceFragment(RecordsScreen())
 
 
-                R.id.nav_settings -> replaceFragment(SettingsFragment())
+                R.id.nav_settings -> replaceFragment(SettingsScreen())
             }
             true
         }

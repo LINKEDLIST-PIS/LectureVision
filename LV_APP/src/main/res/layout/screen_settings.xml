@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⚙️ 설정"
+            android:text="@string/settings_title"
             android:textColor="#1E293B"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -25,15 +25,15 @@
             android:layout_marginTop="8dp"
             android:layout_marginStart="4dp"/>
 
-        <!-- 프로필 섹션 -->
+        <!-- 1. 프로필 섹션 -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
+            app:cardElevation="2dp"
             app:strokeWidth="0dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="@color/white">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -43,12 +43,12 @@
                 android:padding="20dp">
 
                 <ImageView
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:src="@android:drawable/sym_def_app_icon"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@mipmap/ic_launcher"
                     app:tint="#CBD5E1"
                     android:background="@drawable/bg_circle_gray"
-                    android:padding="12dp"/>
+                    android:padding="10dp"/>
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -73,28 +73,20 @@
                         android:text="user@gnu.ac.kr"
                         android:textSize="14sp"
                         android:textColor="#64748B"
-                        android:layout_marginTop="4dp"/>
+                        android:layout_marginTop="2dp"/>
                 </LinearLayout>
-
-                <ImageButton
-                    android:id="@+id/btnEditProfile"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@android:drawable/ic_menu_edit"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="#94A3B8"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 앱 설정 섹션 -->
+        <!-- 2. 앱 설정 섹션 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="앱 설정"
+            android:text="@string/section_app_settings"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#64748B"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginStart="4dp"/>
 
         <com.google.android.material.card.MaterialCardView
@@ -102,75 +94,28 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
+            app:cardElevation="1dp"
             app:strokeWidth="0dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="@color/white">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- 다크 모드 스위치 -->
+                <!-- 알림 설정 -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/iconDarkMode"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_gallery"
-                        app:tint="#64748B"
-                        android:layout_centerVertical="true"/>
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="다크 모드"
+                        android:text="@string/pref_notifications"
                         android:textSize="16sp"
                         android:textColor="#1E293B"
-                        android:layout_toEndOf="@id/iconDarkMode"
-                        android:layout_marginStart="16dp"
                         android:layout_centerVertical="true"/>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchDarkMode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"/>
-                </RelativeLayout>
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
-
-                <!-- 알림 설정 스위치 -->
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground">
-
-                    <ImageView
-                        android:id="@+id/iconNotification"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_popup_reminder"
-                        app:tint="#64748B"
-                        android:layout_centerVertical="true"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="알림 설정"
-                        android:textSize="16sp"
-                        android:textColor="#1E293B"
-                        android:layout_toEndOf="@id/iconNotification"
-                        android:layout_marginStart="16dp"
-                        android:layout_centerVertical="true"/>
-
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/switchNotifications"
                         android:layout_width="wrap_content"
@@ -178,18 +123,47 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"/>
                 </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 언어 변경 -->
+                <RelativeLayout
+                    android:id="@+id/layoutLanguage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_language"
+                        android:textSize="16sp"
+                        android:textColor="#1E293B"
+                        android:layout_centerVertical="true"/>
+                    <TextView
+                        android:id="@+id/tvCurrentLanguage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/current_lang_ko"
+                        android:textSize="14sp"
+                        android:textColor="#64748B"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="8dp"/>
+                </RelativeLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 기타 정보 섹션 -->
+        <!-- 3. 계정 섹션 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="기타"
+            android:text="@string/section_account"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#64748B"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginStart="4dp"/>
 
         <com.google.android.material.card.MaterialCardView
@@ -197,39 +171,81 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
+            app:cardElevation="1dp"
             app:strokeWidth="0dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="@color/white">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- 버전 정보 -->
+                <!-- 비밀번호 변경 -->
+                <TextView
+                    android:id="@+id/btnChangePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_change_password"
+                    android:textSize="16sp"
+                    android:textColor="#1E293B"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 이메일 변경 -->
+                <TextView
+                    android:id="@+id/btnChangeEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_change_email"
+                    android:textSize="16sp"
+                    android:textColor="#1E293B"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 4. 이용 안내 섹션 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_info"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#64748B"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 앱 버전 -->
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/iconInfo"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_info_details"
-                        app:tint="#64748B"
-                        android:layout_centerVertical="true"/>
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="앱 버전"
+                        android:text="@string/info_app_version"
                         android:textSize="16sp"
                         android:textColor="#1E293B"
-                        android:layout_toEndOf="@id/iconInfo"
-                        android:layout_marginStart="16dp"
                         android:layout_centerVertical="true"/>
-
                     <TextView
                         android:id="@+id/tvVersion"
                         android:layout_width="wrap_content"
@@ -240,30 +256,34 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"/>
                 </RelativeLayout>
-
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
 
                 <!-- 개인정보 처리방침 -->
                 <TextView
+                    android:id="@+id/btnPrivacyPolicy"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="개인정보 처리방침"
-                    android:padding="16dp"
+                    android:text="@string/info_privacy_policy"
                     android:textSize="16sp"
                     android:textColor="#1E293B"
-                    android:background="?attr/selectableItemBackground"/>
-
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
                 <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
 
                 <!-- 서비스 이용약관 -->
                 <TextView
+                    android:id="@+id/btnTermsOfService"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="서비스 이용약관"
-                    android:padding="16dp"
+                    android:text="@string/info_terms_of_service"
                     android:textSize="16sp"
                     android:textColor="#1E293B"
-                    android:background="?attr/selectableItemBackground"/>
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -272,7 +292,7 @@
             android:id="@+id/btnLogout"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="로그아웃"
+            android:text="@string/action_logout"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#EF4444"
@@ -284,7 +304,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Lecture Vision © 2025"
+            android:text="@string/copyright"
             android:gravity="center"
             android:textSize="12sp"
             android:textColor="#94A3B8"

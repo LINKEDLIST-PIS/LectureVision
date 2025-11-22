@@ -17,12 +17,10 @@ class SplashActivity : AppCompatActivity() {
             // Check if a token exists
             val token = TokenManager.getToken()
 
-            // Decide the next activity based on token availability
-            val nextActivity = if (token != null) {
-                // If token exists, go to the main activity
+            // 토큰이 있으면 메인 화면(BottomNavActivity), 없으면 로그인 화면(LoginActivity)으로 이동
+            val nextActivity = if (!token.isNullOrEmpty()) {
                 BottomNavActivity::class.java
             } else {
-                // If not, go to the login activity
                 LoginActivity::class.java
             }
 

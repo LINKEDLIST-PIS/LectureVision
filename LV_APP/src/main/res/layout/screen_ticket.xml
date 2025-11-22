@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#f5f5f5"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="출석 체크용 티켓 발급"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#1E293B"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="버튼을 누르면 5분간 유효한 티켓이 생성됩니다."
+        android:textSize="14sp"
+        android:textColor="#64748B"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 티켓 발급 버튼 -->
+    <Button
+        android:id="@+id/btn_issue_ticket"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="티켓 발급하기"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:backgroundTint="#0ea5e9"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 발급된 티켓 정보 표시 카드 (초기에는 숨김) -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_ticket_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TICKET ISSUED"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#0ea5e9"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="16dp" />
+
+            <!-- 티켓 ID or Code -->
+            <TextView
+                android:id="@+id/tv_ticket_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TICKET-12345"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="#1E293B"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tv_ticket_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="강의실 입장 및 출석용"
+                android:textSize="16sp"
+                android:textColor="#334155"
+                android:layout_marginBottom="24dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E2E8F0"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tv_valid_until"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="유효시간: 14:05:00 까지"
+                android:textSize="14sp"
+                android:textColor="#EF4444"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:visibility="gone" />
+
+</LinearLayout>

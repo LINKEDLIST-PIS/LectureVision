@@ -18,14 +18,14 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_marginBottom="8dp"
-            tools:src="@android:drawable/ic_menu_recent_history" />
+            tools:src="@drawable/ic_record" />
 
         <TextView
             android:id="@+id/tv_stat_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"
+            android:textColor="#64748B"
             tools:text="Stat Title" />
 
         <TextView
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"
+            android:textColor="@color/black"
             tools:text="0" />
     </LinearLayout>
 
