@@ -28,13 +28,15 @@ def validate_ticket(ticket: str) -> bool:
 def measure(ticket: str):
     global pause_monitor
 
-    if not validate_ticket(ticket):
+    ticket_data = validate_ticket(ticket)
+    if not ticket_data:
         raise HTTPException(status_code=403, detail="Invalid ticket")
+
     pause_monitor = True
     frame = capture_frame()
     people_count, boxes = detect_people(frame)
     mosaicked = apply_mosaic(frame, boxes)
-    resp = upload_image(mosaicked, people_count)
+    resp = upload_image(mosaicked, people_count, client_id=ticket_data["user_id"])
     pause_monitor = False
 
     return {

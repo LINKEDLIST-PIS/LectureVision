@@ -4,6 +4,7 @@ import hashlib
 import uuid
 import cv2
 import requests
+import jwt, time
 from . import config
 
 def get_token():
@@ -14,11 +15,18 @@ def get_token():
     resp.raise_for_status()
     data = resp.json()
     config.API_TOKEN = data["access_token"]
-    config.TOKEN_EXPIRE_AT = int(time.time()) + 9 * 60
     return config.API_TOKEN
 
+def decode_token(token: str, secret: str = None):
+    payload = jwt.decode(token, options={"verify_signature": False})
+    return payload
+
 def ensure_token():
-    if not config.API_TOKEN or time.time() > config.TOKEN_EXPIRE_AT:
+    if not config.API_TOKEN:
+        return get_token()
+    payload = decode_token(config.API_TOKEN)
+    exp = payload["exp"]
+    if time.time() > exp:
         return get_token()
     return config.API_TOKEN
 
@@ -49,7 +57,8 @@ def upload_image(frame, people_count: int):
         "file": ("frame.png", file_bytes, "image/png")
     }
     data = {
-        "people_count": people_count
+        "people_count": people_count, 
+        "client_id": client_id
     }
 
     resp = requests.post(f"{config.API_BASE}/upload", headers=headers, files=files, data=data)
