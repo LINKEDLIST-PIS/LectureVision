@@ -222,6 +222,7 @@ class TimetableView @JvmOverloads constructor(
             hour + minute / 60f
         } catch (e: Exception) {
             -1f
+        }
     }
 
     private fun dpToPx(dp: Float): Float {
