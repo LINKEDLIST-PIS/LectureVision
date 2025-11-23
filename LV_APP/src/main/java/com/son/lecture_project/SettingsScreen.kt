@@ -34,8 +34,7 @@ class SettingsScreen : Fragment() {
         loadSettings()
         loadUserInfo()
         setupClickListeners()
-        
-        // Display app version
+
         try {
             val packageInfo = requireActivity().packageManager.getPackageInfo(requireActivity().packageName, 0)
             binding.tvVersion.text = packageInfo.versionName
@@ -108,9 +107,8 @@ class SettingsScreen : Fragment() {
 
     private fun showLanguageDialog() {
         val languages = arrayOf(getString(R.string.current_lang_ko), getString(R.string.current_lang_en))
-        // 현재 언어 확인
         val currentLocale = AppCompatDelegate.getApplicationLocales()[0]
-        val currentLang = currentLocale?.language ?: "ko" // 기본값 한국어
+        val currentLang = currentLocale?.language ?: "ko"
         
         val checkedItem = if (currentLang == "en") 1 else 0
 
@@ -123,10 +121,10 @@ class SettingsScreen : Fragment() {
                     TokenManager.setLanguage(langCode)
                     dialog.dismiss()
                     
-                    // AppCompatDelegate를 사용하여 언어 변경 (권장 방식)
+
                     val localeList = LocaleListCompat.forLanguageTags(langCode)
                     AppCompatDelegate.setApplicationLocales(localeList)
-                    // Activity가 자동으로 재생성됨
+
                 } else {
                     dialog.dismiss()
                 }

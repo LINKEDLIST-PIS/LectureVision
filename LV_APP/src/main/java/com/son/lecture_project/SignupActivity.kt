@@ -69,13 +69,13 @@ class SignupActivity : AppCompatActivity() {
                     binding.progressBar.isVisible = false
                     binding.buttonSignup.isEnabled = true
                     
-                    // Show Alert Dialog for Email Verification instruction
+
                     AlertDialog.Builder(this)
                         .setTitle("회원가입 요청 완료")
                         .setMessage("회원가입 요청이 성공했습니다.\n이메일에서 인증을 완료해주세요.")
                         .setPositiveButton("확인") { dialog, _ ->
                             dialog.dismiss()
-                            finish() // Go back to LoginActivity
+                            finish()
                         }
                         .setCancelable(false)
                         .show()

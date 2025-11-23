@@ -18,7 +18,7 @@ import com.son.lecture_project.ui.home.Result
 class BottomNavActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBottomNavBinding
-    private val homeViewModel: HomeViewModel by viewModels() // ViewModel 공유
+    private val homeViewModel: HomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,11 +43,11 @@ class BottomNavActivity : AppCompatActivity() {
 
         actionView?.let { layout ->
             layout.setOnClickListener {
-                // 알림 화면으로 이동
+
                 startActivity(Intent(this, NotificationActivity::class.java))
             }
             
-            // 초기 뱃지 카운트는 0으로 설정 (알림이 없을 때는 숨김 처리됨)
+
             updateBadgeCount(layout, 0)
         }
 
@@ -97,15 +97,14 @@ class BottomNavActivity : AppCompatActivity() {
                     }
                 }
                 else -> {
-                    // 로딩 중이거나 에러 발생 시 기본적으로 빨간불 (혹은 노란불 고려 가능)
+                    // 로딩 중이거나 에러 발생 시 기본적으로 빨간불
                     binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
                 }
             }
         }
     }
 
-    // 뱃지 카운트 업데이트 함수
-    // 외부에서 호출하여 알림 개수를 갱신할 수 있음
+
     fun updateBadgeCount(layout: View, count: Int) {
         val badge = layout.findViewById<TextView>(R.id.tv_notification_badge) ?: return
         if (count > 0) {

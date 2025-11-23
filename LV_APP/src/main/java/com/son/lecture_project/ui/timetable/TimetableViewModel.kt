@@ -1,17 +1,21 @@
 package com.son.lecture_project.ui.timetable
 
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.son.lecture_project.data.api.RetrofitClient
-import com.son.lecture_project.data.local.TokenManager
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.son.lecture_project.data.model.ClassSchedule
-import com.son.lecture_project.data.model.ClassScheduleRequest
 import com.son.lecture_project.ui.home.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class TimetableViewModel : ViewModel() {
+// AndroidViewModel을 상속받아 Application Context 사용
+class TimetableViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _timetable = MutableLiveData<Result<List<ClassSchedule>>>()
     val timetable: LiveData<Result<List<ClassSchedule>>> = _timetable
@@ -19,24 +23,16 @@ class TimetableViewModel : ViewModel() {
     private val _actionResult = MutableLiveData<Result<String>>()
     val actionResult: LiveData<Result<String>> = _actionResult
 
+    private val gson = Gson()
+    private val prefs = application.getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
+    private val KEY_TIMETABLE = "local_timetable_list"
+
     fun loadTimetable() {
         viewModelScope.launch {
             _timetable.value = Result.Loading
             try {
-                val token = TokenManager.getToken()
-                val userId = TokenManager.getUserId()
-
-                if (token == null || userId == null) {
-                    _timetable.value = Result.Error(IllegalStateException("로그인 정보가 없습니다."))
-                    return@launch
-                }
-
-                val response = RetrofitClient.timetableApiService.getUserTimetable("Bearer $token", userId)
-                if (response.isSuccessful && response.body() != null) {
-                    _timetable.value = Result.Success(response.body()!!)
-                } else {
-                    _timetable.value = Result.Error(Exception("시간표 조회 실패: ${response.code()}"))
-                }
+                val list = getLocalTimetable()
+                _timetable.value = Result.Success(list)
             } catch (e: Exception) {
                 _timetable.value = Result.Error(e)
             }
@@ -47,31 +43,26 @@ class TimetableViewModel : ViewModel() {
         viewModelScope.launch {
             _actionResult.value = Result.Loading
             try {
-                val token = TokenManager.getToken()
-                val userId = TokenManager.getUserId()
-
-                if (token == null || userId == null) {
-                    _actionResult.value = Result.Error(IllegalStateException("로그인 정보가 없습니다."))
-                    return@launch
-                }
-
-                val request = ClassScheduleRequest(
+                val currentList = getLocalTimetable().toMutableList()
+                
+                // 새 ID 생성 (가장 큰 ID + 1)
+                val newId = (currentList.maxOfOrNull { it.id } ?: 0) + 1
+                
+                val newClass = ClassSchedule(
+                    id = newId,
                     name = name,
                     day = day,
                     startTime = startTime,
                     endTime = endTime,
                     classroom = classroom,
-                    color = color,
-                    userId = userId
+                    color = color ?: "#FF6B6B" // 기본값 빨강
                 )
-
-                val response = RetrofitClient.timetableApiService.createClass("Bearer $token", request)
-                if (response.isSuccessful && response.body() != null) {
-                    _actionResult.value = Result.Success("수업이 추가되었습니다.")
-                    loadTimetable() // Refresh list
-                } else {
-                    _actionResult.value = Result.Error(Exception("추가 실패: ${response.code()}"))
-                }
+                
+                currentList.add(newClass)
+                saveLocalTimetable(currentList)
+                
+                _actionResult.value = Result.Success("수업이 추가되었습니다.")
+                loadTimetable() // 목록 갱신
             } catch (e: Exception) {
                 _actionResult.value = Result.Error(e)
             }
@@ -82,30 +73,25 @@ class TimetableViewModel : ViewModel() {
         viewModelScope.launch {
             _actionResult.value = Result.Loading
             try {
-                val token = TokenManager.getToken()
-                val userId = TokenManager.getUserId() ?: "" // Not used in body but consistent
-
-                if (token == null) {
-                    _actionResult.value = Result.Error(IllegalStateException("로그인 필요"))
-                    return@launch
-                }
-
-                val request = ClassScheduleRequest(
-                    name = name,
-                    day = day,
-                    startTime = startTime,
-                    endTime = endTime,
-                    classroom = classroom,
-                    color = color,
-                    userId = userId
-                )
-
-                val response = RetrofitClient.timetableApiService.updateClass("Bearer $token", id, request)
-                if (response.isSuccessful) {
+                val currentList = getLocalTimetable().toMutableList()
+                val index = currentList.indexOfFirst { it.id == id }
+                
+                if (index != -1) {
+                    val updatedClass = currentList[index].copy(
+                        name = name,
+                        day = day,
+                        startTime = startTime,
+                        endTime = endTime,
+                        classroom = classroom,
+                        color = color
+                    )
+                    currentList[index] = updatedClass
+                    saveLocalTimetable(currentList)
+                    
                     _actionResult.value = Result.Success("수업이 수정되었습니다.")
                     loadTimetable()
                 } else {
-                    _actionResult.value = Result.Error(Exception("수정 실패: ${response.code()}"))
+                    _actionResult.value = Result.Error(Exception("해당 수업을 찾을 수 없습니다."))
                 }
             } catch (e: Exception) {
                 _actionResult.value = Result.Error(e)
@@ -117,22 +103,40 @@ class TimetableViewModel : ViewModel() {
         viewModelScope.launch {
             _actionResult.value = Result.Loading
             try {
-                val token = TokenManager.getToken()
-                if (token == null) {
-                    _actionResult.value = Result.Error(IllegalStateException("로그인 필요"))
-                    return@launch
-                }
-
-                val response = RetrofitClient.timetableApiService.deleteClass("Bearer $token", id)
-                if (response.isSuccessful) {
+                val currentList = getLocalTimetable().toMutableList()
+                val removed = currentList.removeIf { it.id == id }
+                
+                if (removed) {
+                    saveLocalTimetable(currentList)
                     _actionResult.value = Result.Success("수업이 삭제되었습니다.")
                     loadTimetable()
                 } else {
-                    _actionResult.value = Result.Error(Exception("삭제 실패: ${response.code()}"))
+                    _actionResult.value = Result.Error(Exception("삭제할 수업이 없습니다."))
                 }
             } catch (e: Exception) {
                 _actionResult.value = Result.Error(e)
             }
+        }
+    }
+    
+    // --- Local Storage Helpers (SharedPreferences + Gson) ---
+    
+    private suspend fun getLocalTimetable(): List<ClassSchedule> {
+        return withContext(Dispatchers.IO) {
+            val json = prefs.getString(KEY_TIMETABLE, null)
+            if (json.isNullOrEmpty()) {
+                emptyList()
+            } else {
+                val type = object : TypeToken<List<ClassSchedule>>() {}.type
+                gson.fromJson(json, type)
+            }
+        }
+    }
+    
+    private suspend fun saveLocalTimetable(list: List<ClassSchedule>) {
+        withContext(Dispatchers.IO) {
+            val json = gson.toJson(list)
+            prefs.edit().putString(KEY_TIMETABLE, json).apply()
         }
     }
 }

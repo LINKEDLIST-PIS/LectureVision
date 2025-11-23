@@ -114,12 +114,29 @@ class NotificationViewModel : ViewModel() {
                 }
             }
 
-            // 4. (임시) 최근 측정 결과 알림 시뮬레이션 (API가 없어서 생략하거나 임시 데이터)
-            // 실제로는 서버에서 측정 완료 시 푸시를 주거나 조회 기록 API가 있어야 함.
+            // 4. 최근 측정 결과 알림 (API 조회)
+            try {
+                // 최근 5개 정도만 조회
+                val recordResponse = RetrofitClient.recordApiService.getRecords(authHeader, skip = 0, limit = 5)
+                if (recordResponse.isSuccessful && recordResponse.body() != null) {
+                    val records = recordResponse.body()!!
+                    records.forEach { record ->
+                        list.add(NotificationItem(
+                            id = idCounter++,
+                            type = NotificationType.MEASUREMENT,
+                            title = "측정 완료 알림",
+                            content = "최근 측정된 인원: ${record.peopleCount}명",
+                            timestamp = record.uploadedAt ?: getCurrentDate()
+                        ))
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
             
-            // 최신순 정렬 (timestamp 파싱이 복잡하므로 역순 추가된 순서대로 보여주거나 별도 정렬 로직 필요)
-            // 여기서는 단순히 리스트 뒤집기 (최근 것이 위로 오게 하려면)
-            // 하지만 위 로직은 카테고리별로 추가했으므로 섞여있음.
+            // 최신순 정렬 (timestamp 파싱이 가능하면 좋지만, 일단 간단히 리스트 역순은 아님)
+            // timestamp 문자열 기준으로 내림차순 정렬 시도 (ISO8601 형식이면 문자열 정렬 가능)
+            list.sortByDescending { it.timestamp }
             
             _notifications.value = list
             _isLoading.value = false

@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="수업 편집"
+            android:text="수업 추가/편집"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="#1E293B"
@@ -44,8 +44,7 @@
             android:id="@+id/spinner_day"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginBottom="12dp"
-            android:background="@drawable/bg_input" />
+            android:layout_marginBottom="12dp" />
 
         <!-- 시간 입력 -->
         <LinearLayout

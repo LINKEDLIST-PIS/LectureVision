@@ -7,7 +7,6 @@ import retrofit2.http.Header
 
 interface NoticeApiService {
 
-    // 수정됨: /api/v1 제거
     @GET("notices")
     suspend fun getNotices(
         @Header("Authorization") token: String

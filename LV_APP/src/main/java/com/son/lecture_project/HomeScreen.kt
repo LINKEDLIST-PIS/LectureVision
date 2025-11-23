@@ -25,9 +25,9 @@ class HomeScreen : Fragment() {
     private var _binding: ScreenHomeBinding? = null
     private val binding get() = _binding!!
 
-    // 액티비티 범위로 ViewModel 공유 (타이머 유지)
+
     private val homeViewModel: HomeViewModel by activityViewModels()
-    // private val ticketViewModel: TicketViewModel by viewModels() // 사용하지 않으므로 주석 유지하거나 제거
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,7 +45,7 @@ class HomeScreen : Fragment() {
         
         observeMeasurementResult()
         observeHomeData()
-        observeTimer() // 타이머 상태 관찰 추가
+        observeTimer()
         
         Log.d("HomeScreen", "Loading home data...")
         // 데이터 로드는 뷰모델이 이미 데이터를 가지고 있지 않을 때만 호출하도록 할 수도 있지만,
@@ -99,7 +99,7 @@ class HomeScreen : Fragment() {
         }
     }
 
-    // 기존 로컬 타이머 함수 제거 (startTimer, stopTimer)
+
 
     private fun observeMeasurementResult() {
         homeViewModel.measurementResult.observe(viewLifecycleOwner) { result ->
@@ -201,7 +201,7 @@ class HomeScreen : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // 로컬 타이머 정지 로직 제거 (뷰모델에서 관리하므로 여기서 멈추지 않음)
+
         _binding = null
     }
 }

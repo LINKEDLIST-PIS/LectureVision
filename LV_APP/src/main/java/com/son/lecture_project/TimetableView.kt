@@ -33,7 +33,7 @@ class TimetableView @JvmOverloads constructor(
     private val classBlockPaint = Paint()
     private val classTextPaint = TextPaint().apply { color = Color.WHITE; textSize = dpToPx(12f) }
     
-    // 수업 블록의 화면상 좌표를 저장하기 위한 리스트
+
     private val classRects = mutableListOf<Pair<RectF, ClassSchedule>>()
 
     fun setClasses(newClasses: List<ClassSchedule>) {

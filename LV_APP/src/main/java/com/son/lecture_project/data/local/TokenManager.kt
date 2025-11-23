@@ -3,10 +3,7 @@ package com.son.lecture_project.data.local
 import android.content.Context
 import android.content.SharedPreferences
 
-/**
- * A singleton object to manage the user's authentication token using SharedPreferences.
- * This manager handles saving, retrieving, and clearing the token.
- */
+
 object TokenManager {
 
     private const val PREFS_NAME = "auth_prefs"

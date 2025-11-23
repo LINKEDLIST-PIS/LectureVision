@@ -19,8 +19,7 @@ class NotificationActivity : AppCompatActivity() {
 
         setupRecyclerView()
         observeViewModel()
-        
-        // 데이터 로드 시작
+
         viewModel.loadNotifications()
         
         binding.btnBack.setOnClickListener {
@@ -30,7 +29,6 @@ class NotificationActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         binding.rvNotifications.layoutManager = LinearLayoutManager(this)
-        // 초기에는 빈 리스트
         binding.rvNotifications.adapter = NotificationAdapter(emptyList())
     }
 

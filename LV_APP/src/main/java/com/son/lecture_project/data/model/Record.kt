@@ -6,5 +6,5 @@ data class Record(
     val id: String,
     val courseName: String,
     val date: Date,
-    val status: String // e.g., "출석", "결석", "지각"
+    val status: String
 )

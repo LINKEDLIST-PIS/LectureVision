@@ -2,15 +2,14 @@ package com.son.lecture_project.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// Notice와 ClassSchedule은 별도 파일(Notice.kt, ClassSchedule.kt)로 분리되었습니다.
 
 // --- API-related data models ---
 
-// Account
+
 data class SignUpRequest(
     val email: String,
     val password: String
-    // name field removed to match strict API example
+
 )
 
 data class SignUpResponse(

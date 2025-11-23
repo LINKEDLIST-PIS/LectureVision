@@ -4,10 +4,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // Base URL 끝에 '/'를 추가하여 상대 경로 매핑 문제 방지
+
     private const val BASE_URL = "https://cm838.myasustor.com:5445/"
     
-    // 모델 서버 URL (가정)
+
     private const val MODEL_SERVER_URL = "http://cm838.myasustor.com:8000/"
 
     private val retrofit: Retrofit by lazy {
