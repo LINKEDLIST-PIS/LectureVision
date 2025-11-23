@@ -1,3 +1,4 @@
+📂 프로젝트 구조
 ```
 com.son.lecture_project
 ├── MyApplication.kt           // 앱의 전역 상태 관리 및 초기화
@@ -142,7 +143,7 @@ TokenManager.kt
 SharedPreferences 캡슐화한 싱글톤.
 
 액세스 토큰, 사용자 ID, 이메일, 언어 설정, 알림 설정 등 저장·로드.
-
+...
 E. 유틸리티 및 커스텀 뷰
 TimetableView.kt
 
@@ -156,4 +157,4 @@ NotificationActivity.kt
 
 알림 아이콘 클릭 시 이동하는 화면.
 
-서버/로컬에 저장된 알림 목록 표시.
+서버/로컬에 저장된 알림 목록 표시...
