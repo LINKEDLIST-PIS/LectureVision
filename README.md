@@ -1,3 +1,4 @@
+---
 📂 프로젝트 구조
 ```
 com.son.lecture_project
@@ -36,8 +37,10 @@ com.son.lecture_project
     └── settings
         └── SettingsScreen.kt      // [탭4] 설정 화면 (언어, 비밀번호 변경)
 ```
-
+---
+---
 📱 LectureVision 앱 구조 개요
+
 🚀 A. 앱 진입 및 인증 (Entry & Auth)
 🔧 MyApplication.kt
 
@@ -74,7 +77,8 @@ TokenManager.init(this)로 SharedPreferences 전역 초기화
 유효성 검사 후 서버 요청
 
 성공 시 인증 메일 발송
-
+---
+---
 🧭 B. 메인 컨테이너 (Main Container)
 📌 BottomNavActivity.kt
 
@@ -95,7 +99,7 @@ TokenManager.init(this)로 SharedPreferences 전역 초기화
 🔔 알림 아이콘
 
 🔴 읽지 않은 알림 배지 표시
-
+---
 📂 C. 주요 탭 화면 (Fragments)
 🏠 HomeScreen.kt / HomeViewModel.kt
 🎯 역할: 앱 대시보드
