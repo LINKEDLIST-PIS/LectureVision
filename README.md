@@ -37,124 +37,126 @@ com.son.lecture_project
         └── SettingsScreen.kt      // [탭4] 설정 화면 (언어, 비밀번호 변경)
 ```
 
-LectureVision 앱 구조 개요
-A. 앱 진입 및 인증 (Entry & Auth)
-MyApplication.kt
+📱 LectureVision 앱 구조 개요
 
-앱 실행 시 가장 먼저 호출되는 클래스.
 
-TokenManager.init(this) 실행하여 SharedPreferences 전역 초기화.
+🚀 A. 앱 진입 및 인증 (Entry & Auth)
+🔧 MyApplication.kt
 
-SplashActivity.kt
+앱 실행 시 가장 먼저 호출되는 클래스
 
-앱 실행 시 스플래시 화면 표시.
+TokenManager.init(this)로 SharedPreferences 전역 초기화
 
-저장된 토큰(TokenManager) 검증:
 
-로그인 상태 → BottomNavActivity 이동
+🎬 SplashActivity.kt
 
-비로그인 상태 → LoginActivity 이동
+앱 첫 실행 화면(스플래시)
 
-LoginActivity.kt / LoginViewModel.kt
+저장된 토큰 검사:
+✅ 로그인됨 → BottomNavActivity 이동
+❌ 미로그인 → LoginActivity 이동
 
-이메일·비밀번호 입력 후 서버 로그인 요청.
+
+🔐 LoginActivity.kt / LoginViewModel.kt
+
+이메일 & 비밀번호 로그인 요청
 
 로그인 성공 시:
+🔑 Access Token 저장
+👤 사용자 ID 저장
+메인 화면 이동
 
-액세스 토큰(Access Token) 저장
 
-사용자 ID 저장
+📝 SignupActivity.kt / SignupViewModel.kt
 
-메인 화면으로 이동.
+회원가입 (이름, 이메일(@gnu.ac.kr), 비밀번호 입력)
+유효성 검사 후 서버 요청
+성공 시 인증 메일 발송
 
-SignupActivity.kt / SignupViewModel.kt
 
-회원가입 화면.
+🧭 B. 메인 컨테이너 (Main Container)
+📌 BottomNavActivity.kt
 
-이름, 이메일(@gnu.ac.kr), 비밀번호 입력 및 유효성 검사.
+로그인 후 진입하는 메인 액티비티
 
-검증 통과 시 서버에 회원가입 요청.
+하단 탭 구성:
+🏠 홈
+📅 시간표
+🧾 기록
+⚙️ 설정
+상단 TopAppBar에:
+🔔 알림 아이콘
+🔴 읽지 않은 알림 배지 표시
 
-B. 메인 컨테이너 (Main Container)
-BottomNavActivity.kt
 
-로그인 후 진입하는 메인 액티비티.
 
-BottomNavigationView를 통해 홈 / 시간표 / 기록 / 설정 4개 프래그먼트 전환.
-
-TopAppBar에 알림 아이콘 및 읽지 않은 알림 배지(Badge) 표시.
-
-C. 주요 탭 화면 (Fragments)
-HomeScreen.kt / HomeViewModel.kt
-
+📂 C. 주요 탭 화면 (Fragments)
+🏠 HomeScreen.kt / HomeViewModel.kt
 역할: 앱 대시보드
-기능
+기능:
+티켓 상태 조회 → 없는 경우 자동 발급
 
-티켓 상태 조회 및 UI 표시(없으면 자동 발급).
+⏱ 타이머 → AI 모델 서버에 인원 측정 요청
+현재 강의실 인원 표시
+📢 최신 공지
+📅 오늘의 시간표 요약
 
-타이머 시작 → AI 모델 서버에 인원 측정 요청 → 현재 강의실 인원 표시.
 
-최신 공지, 오늘의 시간표 요약 표시.
+📅 TimetableScreen.kt / TimetableViewModel.kt
+ 역할: 시간표 관리
+ 기능
 
-TimetableScreen.kt / TimetableViewModel.kt
+TimetableView 커스텀 뷰로 주간 시간표 시각화
+CRUD(추가/수정/삭제)
+🎨 강의 색상 선택
+데이터 로컬/서버에 저장
 
-역할: 시간표 관리
-기능
 
-TimetableView 커스텀 뷰로 주간 시간표 시각화.
+🧾 RecordsScreen.kt / RecordsViewModel.kt
+ 역할: 사용자 활동 기록
+ 기능
+서버에서 기록 조회 → 리스트 표시
+📆 기간 필터(7일/30일)
+📚 과목 필터
+📊 통계 탭(추후)
 
-수업 추가·수정·삭제(CRUD), 색상 선택.
 
-데이터 영구 저장(서버 또는 SharedPreferences).
+⚙️ SettingsScreen.kt
+ 역할: 앱 설정 및 계정 관리
+ 기능
+🔑 비밀번호 변경
+📧 이메일 변경
+🚪 로그아웃
+🌐 언어 변경 (한/영)
+🔔 알림 설정 ON/OFF
 
-RecordsScreen.kt / RecordsViewModel.kt
 
-역할: 사용자 활동 기록 조회
-기능
+🌐 D. 데이터 & 네트워크 (Data Layer)
+🌍 ApiClient.kt / RetrofitClient.kt
 
-서버에서 기록 데이터를 가져와 리스트로 표시.
-
-기간(7/30일), 과목별 필터 가능.
-
-목록 보기 / 통계 보기(예정) 탭 제공.
-
-SettingsScreen.kt
-
-역할: 앱 설정 및 계정 관리
-기능
-
-비밀번호 변경, 이메일 변경, 로그아웃.
-
-언어 변경(한국어/영어), 알림 수신 여부 ON/OFF.
-
-D. 데이터 및 네트워크 (Data Layer)
-ApiClient.kt / RetrofitClient.kt
-
-Retrofit 기반 HTTP 통신 객체 생성.
-
-서로 다른 베이스 URL 관리:
-
+Retrofit 기반 HTTP 통신
+두 개의 Base URL 관리
 MainApiService (메인 서버)
-
 ModelApiService (AI 모델 서버)
 
-TokenManager.kt
 
-SharedPreferences 캡슐화한 싱글톤.
+🔑 TokenManager.kt
+SharedPreferences 기반 싱글톤
+저장/로드하는 항목:
+Access Token
+사용자 ID
+이메일
+언어 설정
+알림 설정
 
-액세스 토큰, 사용자 ID, 이메일, 언어 설정, 알림 설정 등 저장·로드.
-...
-E. 유틸리티 및 커스텀 뷰
-TimetableView.kt
 
-Canvas 기반 커스텀 뷰.
+🛠 E. 유틸리티 및 커스텀 뷰
+🖼 TimetableView.kt
+Canvas 기반 커스텀 뷰
+시간표 그리드 및 강의 블록 직접 그림
+터치 이벤트로 선택된 수업 정보 반환
 
-시간표 그리드 및 수업 블록 직접 그리기.
 
-터치 이벤트로 수업 블록 클릭 정보 반환.
-
-NotificationActivity.kt
-
-알림 아이콘 클릭 시 이동하는 화면.
-
-서버/로컬에 저장된 알림 목록 표시...
+🔔 NotificationActivity.kt
+알림 아이콘 클릭 시 이동
+서버/로컬 저장 알림 목록 표시
