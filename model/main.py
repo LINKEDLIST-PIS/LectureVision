@@ -14,7 +14,7 @@ model = FastAPI(
     version="0.3.0"
 )
 
-def validate_ticket(ticket: str) -> bool:
+def validate_ticket(ticket: str) -> dict | None:
     token = ensure_token()
     headers = {"Authorization": f"Bearer {token}"}
     resp = requests.post(
@@ -22,7 +22,10 @@ def validate_ticket(ticket: str) -> bool:
         params={"ticket": ticket},
         headers=headers
     )
-    return resp.status_code == 200
+    if resp.status_code == 200:
+        return resp.json()
+
+    return None
 
 @model.post("/measure")
 def measure(ticket: str):
@@ -38,6 +41,11 @@ def measure(ticket: str):
     mosaicked = apply_mosaic(frame, boxes)
     resp = upload_image(mosaicked, people_count, client_id=ticket_data["user_id"])
     pause_monitor = False
+
+    try:
+        api_response = resp.json()
+    except ValueError:
+        api_response = {"error": "Invalid response from upload API"}
 
     return {
         "people_count": people_count,
