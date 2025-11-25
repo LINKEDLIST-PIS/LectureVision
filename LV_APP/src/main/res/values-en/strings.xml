@@ -8,6 +8,9 @@
     <string name="section_info">Info</string>
     
     <string name="pref_notifications">Notifications</string>
+    <string name="pref_ticket_indicator">Ticket Status Indicator</string>
+    <string name="pref_debug_mode">Debug Mode</string>
+    <string name="pref_model_url_title">Model Server URL</string>
     <string name="pref_language">Language</string>
     <string name="current_lang_ko">Korean</string>
     <string name="current_lang_en">English</string>
@@ -28,6 +31,7 @@
     <string name="btn_cancel">Cancel</string>
     <string name="btn_confirm">Confirm</string>
     <string name="btn_change">Change</string>
+    <string name="btn_connect">Connect</string>
     
     <string name="dialog_lang_title">Select Language</string>
     
@@ -49,6 +53,14 @@
     <string name="msg_noti_off">Notifications disabled.</string>
     <string name="msg_privacy_preparing">Privacy Policy is under preparation.</string>
     <string name="msg_terms_preparing">Terms of Service is under preparation.</string>
+    
+    <string name="msg_model_url_saved">Model server URL saved.</string>
+    <string name="msg_connecting">Connecting...</string>
+    <string name="msg_connected">Successfully connected to Model Server!</string>
+    <string name="msg_connection_failed">Connection failed: %s</string>
+    <string name="msg_invalid_url">URL must start with http:// or https://</string>
+    <string name="msg_enter_url">Please enter URL.</string>
+    <string name="msg_server_error">Server response error: %s</string>
 
     <!-- Home Screen -->
     <string name="home_notice_title">Notice</string>
@@ -126,7 +138,7 @@
     <string name="msg_ticket_issued">Ticket issued!</string>
     <string name="msg_issue_failed">Issue failed</string>
     <string name="msg_class_finish_timer">Finish Class (Close Attendance)</string>
-    <string name="msg_timer_finished">Class time is over.</string>
+    <string name="msg_timer_finished">Measurement complete.</string>
     <string name="msg_measurement_complete">Attendance check complete!</string>
     <string name="msg_ticket_checking_status">Checking ticket...</string>
     <string name="msg_ticket_no_info">No ticket info</string>

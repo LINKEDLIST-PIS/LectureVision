@@ -103,6 +103,28 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- 티켓 상태 표시 설정 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_ticket_indicator"
+                        android:textSize="16sp"
+                        android:textColor="#1E293B"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchTicketIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
+
                 <!-- 알림 설정 -->
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -152,6 +174,69 @@
                         android:layout_centerVertical="true"
                         android:layout_marginEnd="8dp"/>
                 </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F1F5F9" android:layout_marginHorizontal="16dp"/>
+                
+                <!-- 디버그 모드 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_debug_mode"
+                        android:textSize="16sp"
+                        android:textColor="#1E293B"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDebugMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                
+                <!-- 모델 서버 주소 입력 (디버그 모드 활성화 시 표시) -->
+                <LinearLayout
+                    android:id="@+id/layoutModelUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="16dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_model_url_title"
+                        android:textSize="14sp"
+                        android:textColor="#64748B"
+                        android:layout_marginBottom="8dp"/>
+                        
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="http://example.com:8000"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etModelServerUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textUri"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+                    
+                    <Button
+                        android:id="@+id/btnSaveModelUrl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_connect"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="8dp"/>
+                </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

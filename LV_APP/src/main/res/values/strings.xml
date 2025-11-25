@@ -8,6 +8,9 @@
     <string name="section_info">이용 안내</string>
     
     <string name="pref_notifications">알림 설정</string>
+    <string name="pref_ticket_indicator">티켓 상태 표시</string>
+    <string name="pref_debug_mode">디버그 모드</string>
+    <string name="pref_model_url_title">모델 서버 URL 입력</string>
     <string name="pref_language">언어 변경</string>
     <string name="current_lang_ko">한국어</string>
     <string name="current_lang_en">English</string>
@@ -28,6 +31,7 @@
     <string name="btn_cancel">취소</string>
     <string name="btn_confirm">확인</string>
     <string name="btn_change">변경</string>
+    <string name="btn_connect">연결</string>
     
     <string name="dialog_lang_title">언어 선택 / Select Language</string>
     
@@ -49,6 +53,14 @@
     <string name="msg_noti_off">알림이 꺼졌습니다.</string>
     <string name="msg_privacy_preparing">개인정보 처리방침을 준비 중입니다.</string>
     <string name="msg_terms_preparing">서비스 이용약관을 준비 중입니다.</string>
+    
+    <string name="msg_model_url_saved">모델 서버 주소가 저장되었습니다.</string>
+    <string name="msg_connecting">연결 시도 중...</string>
+    <string name="msg_connected">모델 서버에 성공적으로 연결되었습니다!</string>
+    <string name="msg_connection_failed">연결 실패: %s</string>
+    <string name="msg_invalid_url">URL은 http:// 또는 https://로 시작해야 합니다.</string>
+    <string name="msg_enter_url">URL을 입력해주세요.</string>
+    <string name="msg_server_error">서버 응답 오류: %s</string>
 
     <!-- Home Screen -->
     <string name="home_notice_title">공지사항</string>
@@ -126,7 +138,7 @@
     <string name="msg_ticket_issued">티켓이 발급되었습니다!</string>
     <string name="msg_issue_failed">발급 실패</string>
     <string name="msg_class_finish_timer">수업 종료 (출석 마감)</string>
-    <string name="msg_timer_finished">수업 시간이 종료되었습니다.</string>
+    <string name="msg_timer_finished">측정이 완료되었습니다.</string>
     <string name="msg_measurement_complete">인원수 측정이 완료되었습니다!</string>
     <string name="msg_ticket_checking_status">티켓 확인 중...</string>
     <string name="msg_ticket_no_info">티켓 정보 없음</string>

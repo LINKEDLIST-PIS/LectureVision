@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.ActivityBottomNavBinding
 import com.son.lecture_project.ui.home.HomeViewModel
 import com.son.lecture_project.ui.home.Result
@@ -36,6 +37,8 @@ class BottomNavActivity : AppCompatActivity() {
         observeTicketStatus()
         // 초기 상태 확인
         homeViewModel.checkTicketStatus()
+        // 티켓 표시등 가시성 초기화
+        refreshTicketIndicatorVisibility()
 
         // 상단바 메뉴 설정 (커스텀 레이아웃 클릭 리스너 처리)
         val menuItem = binding.topAppBar.menu.findItem(R.id.action_notifications)
@@ -43,11 +46,8 @@ class BottomNavActivity : AppCompatActivity() {
 
         actionView?.let { layout ->
             layout.setOnClickListener {
-
                 startActivity(Intent(this, NotificationActivity::class.java))
             }
-            
-
             updateBadgeCount(layout, 0)
         }
 
@@ -104,6 +104,11 @@ class BottomNavActivity : AppCompatActivity() {
         }
     }
 
+    // 외부(SettingsScreen)에서 호출 가능하도록 public으로 선언
+    fun refreshTicketIndicatorVisibility() {
+        val isVisible = TokenManager.isTicketIndicatorVisible()
+        binding.imgTicketStatus.visibility = if (isVisible) View.VISIBLE else View.GONE
+    }
 
     fun updateBadgeCount(layout: View, count: Int) {
         val badge = layout.findViewById<TextView>(R.id.tv_notification_badge) ?: return

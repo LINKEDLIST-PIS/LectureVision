@@ -12,8 +12,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.son.lecture_project.data.api.RetrofitClient
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.ScreenSettingsBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsScreen : Fragment() {
 
@@ -60,6 +65,21 @@ class SettingsScreen : Fragment() {
         val areNotificationsEnabled = TokenManager.areNotificationsEnabled()
         binding.switchNotifications.isChecked = areNotificationsEnabled
         
+        // 티켓 상태 표시 설정 로드
+        val isTicketIndicatorVisible = TokenManager.isTicketIndicatorVisible()
+        binding.switchTicketIndicator.isChecked = isTicketIndicatorVisible
+        
+        // 디버그 모드 설정 로드
+        val isDebugMode = TokenManager.isDebugMode()
+        binding.switchDebugMode.isChecked = isDebugMode
+        binding.layoutModelUrl.visibility = if (isDebugMode) View.VISIBLE else View.GONE
+        
+        // 모델 서버 URL 로드
+        val savedUrl = TokenManager.getModelServerUrl()
+        if (!savedUrl.isNullOrEmpty()) {
+            binding.etModelServerUrl.setText(savedUrl)
+        }
+        
         // 현재 언어 설정에 따라 텍스트 업데이트
         val currentLocale = AppCompatDelegate.getApplicationLocales()[0]
         val langCode = currentLocale?.language ?: TokenManager.getLanguage()
@@ -97,6 +117,55 @@ class SettingsScreen : Fragment() {
             TokenManager.setNotificationsEnabled(isChecked)
             val message = if (isChecked) getString(R.string.msg_noti_on) else getString(R.string.msg_noti_off)
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+        
+        // 티켓 상태 표시 스위치
+        binding.switchTicketIndicator.setOnCheckedChangeListener { _, isChecked ->
+            TokenManager.setTicketIndicatorVisible(isChecked)
+            (activity as? BottomNavActivity)?.refreshTicketIndicatorVisibility()
+        }
+        
+        // 디버그 모드 스위치
+        binding.switchDebugMode.setOnCheckedChangeListener { _, isChecked ->
+            TokenManager.setDebugMode(isChecked)
+            binding.layoutModelUrl.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
+        
+        // 모델 서버 URL 저장 및 연결 테스트 버튼
+        binding.btnSaveModelUrl.setOnClickListener {
+            val url = binding.etModelServerUrl.text.toString().trim()
+            if (url.isNotEmpty()) {
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    Toast.makeText(context, "URL은 http:// 또는 https://로 시작해야 합니다.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
+                // 1. URL 저장 (RetrofitClient가 이 값을 사용하게 됨)
+                TokenManager.setModelServerUrl(url)
+                Toast.makeText(context, "연결 시도 중...", Toast.LENGTH_SHORT).show()
+                
+                // 2. 실제 연결 테스트 (Health Check)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        // checkHealth 호출 (GET /)
+                        val response = RetrofitClient.modelApiService.checkHealth()
+                        withContext(Dispatchers.Main) {
+                            // 응답이 성공적이거나, 404라도 서버가 응답했다면 연결은 된 것으로 간주
+                            if (response.isSuccessful || response.code() != 0) {
+                                Toast.makeText(context, "모델 서버에 성공적으로 연결되었습니다!", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "서버 응답 오류: ${response.code()}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                             Toast.makeText(context, "연결 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            } else {
+                Toast.makeText(context, "URL을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // 로그아웃

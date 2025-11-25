@@ -12,10 +12,15 @@ object TokenManager {
     private const val KEY_USER_NAME = "user_name"
     private const val KEY_USER_EMAIL = "user_email"
     
-    // 설정 관련 키 추가
+    // 설정 관련 키
     private const val KEY_DARK_MODE = "dark_mode"
     private const val KEY_NOTIFICATIONS = "notifications"
     private const val KEY_LANGUAGE = "language"
+    private const val KEY_TICKET_INDICATOR = "ticket_indicator"
+    
+    // 디버그 및 모델 서버 관련 키
+    private const val KEY_DEBUG_MODE = "debug_mode"
+    private const val KEY_MODEL_SERVER_URL = "model_server_url"
 
     private lateinit var prefs: SharedPreferences
 
@@ -92,7 +97,6 @@ object TokenManager {
     }
 
     fun isDarkMode(): Boolean {
-        // 기본값: false (시스템 설정을 따를 수도 있지만 여기선 false)
         return prefs.getBoolean(KEY_DARK_MODE, false)
     }
 
@@ -101,7 +105,7 @@ object TokenManager {
     }
 
     fun areNotificationsEnabled(): Boolean {
-        return prefs.getBoolean(KEY_NOTIFICATIONS, true) // 기본값: 켜짐
+        return prefs.getBoolean(KEY_NOTIFICATIONS, true)
     }
     
     fun setLanguage(langCode: String) {
@@ -109,7 +113,33 @@ object TokenManager {
     }
     
     fun getLanguage(): String {
-        return prefs.getString(KEY_LANGUAGE, "ko") ?: "ko" // 기본값: 한국어
+        return prefs.getString(KEY_LANGUAGE, "ko") ?: "ko"
+    }
+
+    fun setTicketIndicatorVisible(visible: Boolean) {
+        prefs.edit().putBoolean(KEY_TICKET_INDICATOR, visible).apply()
+    }
+
+    fun isTicketIndicatorVisible(): Boolean {
+        return prefs.getBoolean(KEY_TICKET_INDICATOR, true)
+    }
+    
+    // --- 디버그 모드 및 모델 서버 URL ---
+    
+    fun setDebugMode(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_DEBUG_MODE, enabled).apply()
+    }
+    
+    fun isDebugMode(): Boolean {
+        return prefs.getBoolean(KEY_DEBUG_MODE, false)
+    }
+    
+    fun setModelServerUrl(url: String) {
+        prefs.edit().putString(KEY_MODEL_SERVER_URL, url).apply()
+    }
+    
+    fun getModelServerUrl(): String? {
+        return prefs.getString(KEY_MODEL_SERVER_URL, null)
     }
 
     /**

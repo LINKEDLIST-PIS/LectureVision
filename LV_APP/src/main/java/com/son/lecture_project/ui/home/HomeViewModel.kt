@@ -14,9 +14,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 
-/**
- * A wrapper class for representing UI states (loading, success, error).
- */
+
 sealed class Result<out T> {
     data class Success<out T>(val data: T) : Result<T>()
     data class Error(val exception: Exception) : Result<Nothing>()
@@ -61,45 +59,10 @@ class HomeViewModel : ViewModel() {
                 }
                 val authToken = "Bearer $token"
                 
-                var userId = TokenManager.getUserId()
-                if (userId == null) {
-                    userId = TokenManager.getUserEmail()
-                }
 
-                if (userId == null) {
-                    _ticketStatus.value = Result.Error(Exception("사용자 정보 없음. 재로그인 필요."))
-                    return@launch
-                }
-                
-                Log.d("HomeViewModel", "Fetching ticket for user: $userId")
-
-                val ticketResponse = RetrofitClient.ticketApiService.getUserTicket(authToken, userId)
-                
-                if (ticketResponse.isSuccessful && ticketResponse.body() != null) {
-                    val ticket = ticketResponse.body()!!
-                    Log.d("HomeViewModel", "Ticket fetched: $ticket")
-                    
-                    // userId가 null이 아닐 때만 저장
-                    ticket.userId?.let { uid ->
-                        if (TokenManager.getUserId() == null || uid != TokenManager.getUserId()) {
-                            TokenManager.saveUserId(uid)
-                            loadHomeData()
-                        }
-                    }
-                    
-                    // 티켓 ID 저장
-                    currentTicketId = ticket.ticketId
-                    
-                    // 티켓이 있으면 우선 "티켓 보유중"으로 상태 업데이트
-                    _ticketStatus.value = Result.Success("티켓 보유중")
-
-                    // 추가 검증 (선택 사항: 검증 결과에 따라 메시지 구체화)
-                    ticket.ticketId?.let { tid ->
-                        validateTicket(authToken, tid)
-                    }
-                    
+                if (currentTicketId != null) {
+                    validateTicket(authToken, currentTicketId!!)
                 } else {
-                    Log.d("HomeViewModel", "Ticket not found or fetch failed (${ticketResponse.code()}), trying auto-issue.")
                     autoIssueTicket(authToken)
                 }
             } catch (e: Exception) {
@@ -164,9 +127,9 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    // Timer functions
+
     fun startTimer(minutes: Int) {
-        stopTimer() // Stop any existing timer
+        stopTimer()
         
         val durationInMillis = minutes * 60 * 1000L
         _isTimerRunning.value = true
@@ -185,7 +148,7 @@ class HomeViewModel : ViewModel() {
             }
         }.start()
         
-        // Start measurement API call alongside
+
         startMeasurement()
     }
 
@@ -193,7 +156,7 @@ class HomeViewModel : ViewModel() {
         countDownTimer?.cancel()
         countDownTimer = null
         _isTimerRunning.value = false
-        _timerText.value = null // or keep last value, but null signals reset to UI
+        _timerText.value = null
     }
     
     // 인원 측정 시작 함수
@@ -202,7 +165,7 @@ class HomeViewModel : ViewModel() {
             _measurementResult.value = Result.Loading
             try {
                 if (currentTicketId == null) {
-                    // 티켓이 없으면 에러 처리 (또는 재조회 시도 가능)
+                    // 티켓이 없으면 에러 처리
                     _measurementResult.value = Result.Error(IllegalStateException("유효한 티켓이 없습니다. 잠시 후 다시 시도해주세요."))
                     return@launch
                 }
@@ -230,44 +193,13 @@ class HomeViewModel : ViewModel() {
 
     private fun loadNotices() {
         viewModelScope.launch {
-            _notices.value = Result.Loading
-            try {
-                val token = TokenManager.getToken() ?: return@launch
-                val response = RetrofitClient.noticeApiService.getNotices("Bearer $token")
-                if (response.isSuccessful && response.body() != null) {
-                    _notices.value = Result.Success(response.body()!!)
-                } else {
-                    _notices.value = Result.Error(Exception("공지사항 조회 실패: ${response.code()}"))
-                }
-            } catch (e: Exception) {
-                _notices.value = Result.Error(e)
-            }
+            _notices.value = Result.Success(emptyList())
         }
     }
 
     private fun loadTodayTimetable() {
         viewModelScope.launch {
-            _todayClasses.value = Result.Loading
-            try {
-                val token = TokenManager.getToken() ?: return@launch
-                val userId = TokenManager.getUserId()
-                
-                if (userId != null) {
-                    val response = RetrofitClient.timetableApiService.getUserTimetable("Bearer $token", userId)
-                    if (response.isSuccessful && response.body() != null) {
-                        val allClasses = response.body()!!
-                        val todayName = getTodayDayName()
-                        val todayClasses = allClasses.filter { it.day.contains(todayName) || todayName.contains(it.day) }
-                        _todayClasses.value = Result.Success(todayClasses)
-                    } else {
-                         _todayClasses.value = Result.Error(Exception("시간표 조회 실패"))
-                    }
-                } else {
-                    _todayClasses.value = Result.Error(Exception("User ID 없음"))
-                }
-            } catch (e: Exception) {
-                _todayClasses.value = Result.Error(e)
-            }
+            _todayClasses.value = Result.Success(emptyList())
         }
     }
     
@@ -288,9 +220,6 @@ class HomeViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
-        // ViewModel is cleared when Activity is destroyed, so timer stops then.
-        // If we want background timer service, that's a different requirement (Foreground Service).
-        // But for maintaining across fragments, this is enough.
         stopTimer()
     }
 }

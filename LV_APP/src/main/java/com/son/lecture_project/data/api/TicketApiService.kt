@@ -3,10 +3,8 @@ package com.son.lecture_project.data.api
 import com.son.lecture_project.data.model.Ticket
 import com.son.lecture_project.data.model.TicketValidationResponse
 import retrofit2.Response
-import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TicketApiService {
@@ -22,11 +20,4 @@ interface TicketApiService {
         @Header("Authorization") token: String,
         @Query("ticket") ticketId: String
     ): Response<TicketValidationResponse>
-
-
-    @GET("tickets/user/{userId}")
-    suspend fun getUserTicket(
-        @Header("Authorization") token: String,
-        @Path("userId") userId: String
-    ): Response<Ticket>
 }
