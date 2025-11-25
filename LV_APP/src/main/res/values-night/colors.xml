@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_screen">#111827</color>
+    <color name="bg_card">#1F2937</color>
+    <color name="bg_input_field">#374151</color>
+    <color name="text_primary">#F3F4F6</color>
+    <color name="text_secondary">#9CA3AF</color>
+    <color name="stroke_color">#374151</color>
+    
+    <!-- 다크모드에서도 흰색 글씨가 필요할 때 사용 (예: 버튼 텍스트) -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    
+    <!-- 아이콘 틴트 등 -->
+    <color name="icon_tint">#9CA3AF</color>
+    <color name="nav_item_color_white">#FFFFFF</color>
+</resources>

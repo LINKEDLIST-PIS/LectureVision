@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_screen"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 화면 제목 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_title"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <!-- 1. 프로필 섹션 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/bg_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="20dp">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@mipmap/ic_launcher"
+                    app:tint="#CBD5E1"
+                    android:background="@drawable/bg_circle_gray"
+                    android:padding="10dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp">
+
+                    <TextView
+                        android:id="@+id/tvUserName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="사용자 이름"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"/>
+
+                    <TextView
+                        android:id="@+id/tvUserEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="user@gnu.ac.kr"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 2. 앱 설정 섹션 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_app_settings"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/bg_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 다크 모드 설정 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_dark_mode"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDarkMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+
+                <!-- 티켓 상태 표시 설정 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_ticket_indicator"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchTicketIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 알림 설정 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_notifications"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchNotifications"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 언어 변경 -->
+                <RelativeLayout
+                    android:id="@+id/layoutLanguage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_language"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <TextView
+                        android:id="@+id/tvCurrentLanguage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/current_lang_ko"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="8dp"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+                
+                <!-- 디버그 모드 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_debug_mode"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDebugMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                
+                <!-- 모델 서버 주소 입력 (디버그 모드 활성화 시 표시) -->
+                <LinearLayout
+                    android:id="@+id/layoutModelUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="16dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pref_model_url_title"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginBottom="8dp"/>
+                        
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="http://example.com:8000"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etModelServerUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:inputType="textUri"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+                    
+                    <Button
+                        android:id="@+id/btnSaveModelUrl"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/btn_connect"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="8dp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 3. 계정 섹션 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_account"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/bg_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 비밀번호 변경 -->
+                <TextView
+                    android:id="@+id/btnChangePassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_change_password"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 이메일 변경 -->
+                <TextView
+                    android:id="@+id/btnChangeEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_change_email"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 4. 이용 안내 섹션 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/section_info"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@color/bg_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 앱 버전 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/info_app_version"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:layout_centerVertical="true"/>
+                    <TextView
+                        android:id="@+id/tvVersion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1.0.0"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"/>
+                </RelativeLayout>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 개인정보 처리방침 -->
+                <TextView
+                    android:id="@+id/btnPrivacyPolicy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/info_privacy_policy"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
+
+                <!-- 서비스 이용약관 -->
+                <TextView
+                    android:id="@+id/btnTermsOfService"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/info_terms_of_service"
+                    android:textSize="16sp"
+                    android:textColor="@color/text_primary"
+                    android:padding="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 로그아웃 버튼 -->
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="@string/action_logout"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#EF4444"
+            app:backgroundTint="#FEF2F2"
+            app:cornerRadius="12dp"
+            android:stateListAnimator="@null"
+            app:elevation="0dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/copyright"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#94A3B8"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

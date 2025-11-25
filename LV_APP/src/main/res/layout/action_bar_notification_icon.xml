@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layout_notification_icon"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:layout_gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?attr/selectableItemBackgroundBorderless">
+
+    <ImageView
+        android:id="@+id/iv_notification_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:src="@drawable/baseline_notifications_24"
+        app:tint="@color/yellow_500" />
+
+    <TextView
+        android:id="@+id/tv_notification_badge"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_circle_red"
+        android:gravity="center"
+        android:text="0"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:visibility="gone" />
+</FrameLayout>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="수업 추가/편집"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1E293B"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 수업명 입력 (한글 입력 가능하도록 text 타입 명시) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="수업명"
+            android:layout_marginBottom="12dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_class_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- 요일 선택 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="요일"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_day"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- 시간 입력 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="시작 시간 (예: 09:00)"
+                android:layout_marginEnd="8dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_start_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="time"
+                    android:text="09:00"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="종료 시간 (예: 10:30)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_end_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="time"
+                    android:text="10:30"/>
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="색상 선택"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- 색상 선택 라디오 그룹 -->
+        <RadioGroup
+            android:id="@+id/radio_group_color"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_red"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="빨강"
+                android:buttonTint="#FF6B6B"
+                android:textColor="#FF6B6B"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/radio_blue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="파랑"
+                android:buttonTint="#45B7D1"
+                android:textColor="#45B7D1"
+                android:layout_marginStart="16dp"/>
+
+            <RadioButton
+                android:id="@+id/radio_yellow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="노랑"
+                android:buttonTint="#FFD93D"
+                android:textColor="#FFD93D"
+                android:layout_marginStart="16dp"/>
+                
+            <RadioButton
+                android:id="@+id/radio_green"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="초록"
+                android:buttonTint="#4ECDC4"
+                android:textColor="#4ECDC4"
+                android:layout_marginStart="16dp"/>
+
+        </RadioGroup>
+
+    </LinearLayout>
+</ScrollView>
