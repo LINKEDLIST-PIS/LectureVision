@@ -25,6 +25,10 @@ class BottomNavActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityBottomNavBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // [DEBUG] 현재 저장된 토큰 로그 출력
+        val token = TokenManager.getToken()
+        Log.d("MyToken", "Current Token: $token")
 
         // 언어 변경 후 액티비티 재생성 시, 바텀 네비게이션 타이틀을 강제로 갱신
         updateBottomNavTitles()
@@ -35,8 +39,10 @@ class BottomNavActivity : AppCompatActivity() {
         
         // 티켓 상태 관찰 시작
         observeTicketStatus()
-        // 초기 상태 확인
-        homeViewModel.checkTicketStatus()
+        
+        // 초기 상태 확인 로직 제거 (티켓은 타이머 종료 시 발급됨)
+        // homeViewModel.checkTicketStatus() <- 삭제됨
+
         // 티켓 표시등 가시성 초기화
         refreshTicketIndicatorVisibility()
 
@@ -90,14 +96,20 @@ class BottomNavActivity : AppCompatActivity() {
                 is Result.Success -> {
                     val message = result.data
                     // '유효' 혹은 '보유'라는 단어가 포함되면 발급된 상태로 간주 (초록불)
-                    if (message.contains("유효") || message.contains("보유")) {
+                    if (message.contains("유효") || message.contains("보유") || message.contains("발급됨") || message.contains("완료")) {
                         binding.imgTicketStatus.setImageResource(R.drawable.indicator_green)
                     } else {
                         binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
                     }
                 }
-                else -> {
-                    // 로딩 중이거나 에러 발생 시 기본적으로 빨간불
+                is Result.Error -> {
+                    // 에러 발생 시 빨간불 유지하고 토스트 메시지 표시
+                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
+                    val errorMsg = result.exception.localizedMessage ?: "알 수 없는 오류"
+                    Toast.makeText(this, "티켓/측정 오류: $errorMsg", Toast.LENGTH_LONG).show()
+                }
+                is Result.Loading -> {
+                    // 로딩 중에는 빨간불 (또는 노란불 고려 가능)
                     binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
                 }
             }

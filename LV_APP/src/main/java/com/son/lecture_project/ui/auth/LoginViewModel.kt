@@ -32,17 +32,9 @@ class LoginViewModel : ViewModel() {
                     TokenManager.saveToken(token)
                     TokenManager.saveUserEmail(email)
                     
-                    // 2. Fetch User ID (getMe) and Save
-                    try {
-                        val userResponse = RetrofitClient.mainApiService.getMe("Bearer $token")
-                        if (userResponse.isSuccessful && userResponse.body() != null) {
-                            val user = userResponse.body()!!
-                            // User.id is Int, convert to String and save
-                            TokenManager.saveUserId(user.id.toString())
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    // 참고: /accounts/me 엔드포인트가 없으므로 추가 정보를 가져오지 않음.
+                    // 회원가입 시 저장된 로컬 데이터(이름 등)를 사용하거나,
+                    // 새로운 기기 로그인 시에는 이메일을 기반으로 표시합니다.
 
                     _loginResult.value = Result.Success(loginData)
                 } else {

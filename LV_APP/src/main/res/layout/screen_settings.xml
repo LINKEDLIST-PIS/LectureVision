@@ -264,60 +264,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 3. 계정 섹션 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/section_account"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_secondary"
-            android:layout_marginBottom="8dp"
-            android:layout_marginStart="4dp"/>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="1dp"
-            app:strokeWidth="0dp"
-            app:cardBackgroundColor="@color/bg_card">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <!-- 비밀번호 변경 -->
-                <TextView
-                    android:id="@+id/btnChangePassword"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/action_change_password"
-                    android:textSize="16sp"
-                    android:textColor="@color/text_primary"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"/>
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_color" android:layout_marginHorizontal="16dp"/>
-
-                <!-- 이메일 변경 -->
-                <TextView
-                    android:id="@+id/btnChangeEmail"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/action_change_email"
-                    android:textSize="16sp"
-                    android:textColor="@color/text_primary"
-                    android:padding="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
         <!-- 4. 이용 안내 섹션 -->
         <TextView
             android:layout_width="wrap_content"

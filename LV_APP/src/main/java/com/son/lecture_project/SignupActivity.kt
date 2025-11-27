@@ -1,5 +1,6 @@
 package com.son.lecture_project
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -27,6 +28,22 @@ class SignupActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
+        // 약관 보기 버튼
+        binding.btnShowTerm.setOnClickListener {
+            val intent = Intent(this, WebViewActivity::class.java)
+            intent.putExtra("URL", "https://termly.io/resources/templates/") // 임시 URL
+            intent.putExtra("TITLE", "이용약관")
+            startActivity(intent)
+        }
+
+        // 개인정보처리방침 보기 버튼
+        binding.btnShowPrivacy.setOnClickListener {
+            val intent = Intent(this, WebViewActivity::class.java)
+            intent.putExtra("URL", "https://app-privacy-policy-generator.nisrulz.com/") // 임시 URL
+            intent.putExtra("TITLE", "개인정보처리방침")
+            startActivity(intent)
+        }
+
         binding.buttonSignup.setOnClickListener {
             val name = binding.editSignupName.text.toString().trim()
             val email = binding.editSignupEmail.text.toString().trim()
@@ -45,6 +62,17 @@ class SignupActivity : AppCompatActivity() {
 
             if (password != passwordConfirm) {
                 Toast.makeText(this, "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // 약관 동의 체크 확인
+            if (!binding.checkTerm.isChecked) {
+                Toast.makeText(this, "이용약관에 동의해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (!binding.checkPrivacy.isChecked) {
+                Toast.makeText(this, "개인정보처리방침에 동의해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 

@@ -20,24 +20,18 @@
         android:padding="16dp"
         android:background="@android:color/white">
 
-        <!-- 아이콘 -->
-        <FrameLayout
-            android:id="@+id/icon_container"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_circle_gray"
-            android:backgroundTint="#F1F5F9"
+        <!-- 왼쪽 색상 표시 (과목 색상) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cv_color"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
+            android:backgroundTint="#CBD5E1"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-            
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_record"
-                app:tint="#475569"/>
-        </FrameLayout>
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <!-- 과목명 & 날짜 -->
         <LinearLayout
@@ -46,7 +40,7 @@
             android:orientation="vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toEndOf="@id/icon_container"
+            app:layout_constraintStart_toEndOf="@id/cv_color"
             app:layout_constraintEnd_toStartOf="@id/layout_end_info"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
@@ -72,7 +66,7 @@
                 tools:text="2023.10.27 14:00" />
         </LinearLayout>
 
-        <!-- 우측 정보 (인원수, 상태) -->
+        <!-- 우측 정보 (총인원, 결석) -->
         <LinearLayout
             android:id="@+id/layout_end_info"
             android:layout_width="wrap_content"
@@ -83,43 +77,24 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 
-            <!-- 상태 뱃지 -->
             <TextView
-                android:id="@+id/tv_status"
+                android:id="@+id/tv_total_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="완료"
+                android:text="총인원 : -명"
                 android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#059669"
-                android:background="@drawable/badge_bg_green"
-                android:backgroundTint="#D1FAE5"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:layout_marginBottom="4dp"/>
+                android:textColor="@color/text_secondary"
+                tools:text="총인원 : 25명" />
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/tv_absent_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_present"
-                    app:tint="#64748B"
-                    android:layout_marginEnd="4dp"/>
-                    
-                <TextView
-                    android:id="@+id/tv_present"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#334155"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    tools:text="25명" />
-            </LinearLayout>
+                android:layout_marginTop="4dp"
+                android:text="결석 : -명"
+                android:textSize="12sp"
+                android:textColor="#EF4444"
+                tools:text="결석 : 2명" />
 
         </LinearLayout>
 

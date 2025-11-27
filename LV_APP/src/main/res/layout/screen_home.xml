@@ -17,63 +17,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- ============== 0. 공지사항 섹션 ============== -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_notice"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/bg_card"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:strokeColor="@color/stroke_color"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-                    
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
-                        
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/ic_bell"
-                            android:layout_marginEnd="8dp"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/home_notice_title"
-                            android:textColor="@color/text_primary"
-                            android:textSize="20sp"
-                            android:textStyle="bold"/>
-                    </LinearLayout>
-                    
-                    <!-- 공지사항 내용이 들어갈 곳 -->
-                    <TextView
-                        android:id="@+id/tv_latest_notice"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/home_no_notice"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="16sp"
-                        android:maxLines="2"
-                        android:ellipsize="end"/>
-                        
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- ============== 1. 출석 현황 그리드 ============== -->
             <LinearLayout
                 android:id="@+id/layout_attendance_grid"
@@ -82,7 +25,7 @@
                 android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:layout_marginTop="16dp"
-                app:layout_constraintTop_toBottomOf="@id/card_notice"
+                app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
 

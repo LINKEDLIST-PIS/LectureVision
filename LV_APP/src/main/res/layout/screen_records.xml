@@ -159,23 +159,181 @@
     </FrameLayout>
 
     <!-- Stats View -->
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/layout_stats"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/card_controls"
         app:layout_constraintBottom_toBottomOf="parent">
-        
-        <TextView
-            android:layout_width="wrap_content"
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/msg_stats_preparing"
-            android:textSize="18sp"
-            android:textColor="@color/text_secondary"/>
-    </LinearLayout>
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 1. 요약 카드 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/bg_card"
+                android:layout_marginBottom="16dp">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="전체 평균 인원"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_secondary"
+                        android:textStyle="bold"/>
+                        
+                    <TextView
+                        android:id="@+id/tv_attendance_rate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-"
+                        android:textSize="48sp"
+                        android:textColor="@color/btn_primary"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"/>
+                        
+                    <ProgressBar
+                        android:id="@+id/progress_attendance"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="12dp"
+                        android:progress="0"
+                        android:progressTint="@color/btn_primary"
+                        android:layout_marginTop="16dp"/>
+                        
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="24dp">
+                        
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="총 누적 인원"
+                                android:textColor="@color/text_secondary"/>
+                            <TextView
+                                android:id="@+id/tv_stats_present"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0명"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                        
+                        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="@color/stroke_color"/>
+                        
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="결석"
+                                android:textColor="@color/text_secondary"/>
+                            <TextView
+                                android:id="@+id/tv_stats_absent"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="-"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="#EF4444"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. 주간 그래프 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/bg_card">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="요일별 평균 인원"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="24dp"/>
+                        
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:orientation="horizontal"
+                        android:gravity="bottom">
+                        
+                        <!-- Bar 1 (Mon) -->
+                        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="bottom|center_horizontal" android:orientation="vertical">
+                            <View android:id="@+id/view_bar_mon" android:layout_width="12dp" android:layout_height="0dp" android:background="@color/btn_primary" android:layout_marginBottom="8dp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="월" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+                        
+                        <!-- Bar 2 (Tue) -->
+                        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="bottom|center_horizontal" android:orientation="vertical">
+                            <View android:id="@+id/view_bar_tue" android:layout_width="12dp" android:layout_height="0dp" android:background="@color/btn_primary" android:layout_marginBottom="8dp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="화" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+                        
+                        <!-- Bar 3 (Wed) -->
+                        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="bottom|center_horizontal" android:orientation="vertical">
+                            <View android:id="@+id/view_bar_wed" android:layout_width="12dp" android:layout_height="0dp" android:background="@color/btn_primary" android:layout_marginBottom="8dp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="수" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+                        
+                        <!-- Bar 4 (Thu) -->
+                        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="bottom|center_horizontal" android:orientation="vertical">
+                            <View android:id="@+id/view_bar_thu" android:layout_width="12dp" android:layout_height="0dp" android:background="@color/btn_primary" android:layout_marginBottom="8dp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="목" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+                        
+                        <!-- Bar 5 (Fri) -->
+                        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="bottom|center_horizontal" android:orientation="vertical">
+                            <View android:id="@+id/view_bar_fri" android:layout_width="12dp" android:layout_height="0dp" android:background="@color/btn_primary" android:layout_marginBottom="8dp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="금" android:textSize="12sp" android:textColor="@color/text_secondary"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/progressBar"

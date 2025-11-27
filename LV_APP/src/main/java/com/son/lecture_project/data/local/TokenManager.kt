@@ -22,6 +22,9 @@ object TokenManager {
     private const val KEY_DEBUG_MODE = "debug_mode"
     private const val KEY_MODEL_SERVER_URL = "model_server_url"
 
+    // [추가] 앱 버전 관리 키
+    private const val KEY_APP_VERSION = "app_version_cache"
+
     private lateinit var prefs: SharedPreferences
 
     /**
@@ -146,6 +149,22 @@ object TokenManager {
      * Clears the authentication token and user data, effectively logging the user out.
      */
     fun clearToken() {
+        prefs.edit().clear().apply()
+    }
+
+    // [추가] 저장된 캐시 버전(앱 버전) 가져오기
+    fun getSavedAppVersion(): String? {
+        return prefs.getString(KEY_APP_VERSION, null)
+    }
+
+    // [추가] 현재 앱 버전을 캐시에 저장
+    fun saveAppVersion(version: String) {
+        prefs.edit().putString(KEY_APP_VERSION, version).apply()
+    }
+
+    // [추가] 모든 캐시 데이터 삭제 (로그아웃/초기화 시 사용)
+    // 앱 버전 정보는 지우지 않거나, 초기화 후 바로 다시 저장해야 합니다.
+    fun clearAllData() {
         prefs.edit().clear().apply()
     }
 }

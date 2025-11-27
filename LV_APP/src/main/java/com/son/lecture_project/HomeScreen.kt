@@ -49,10 +49,7 @@ class HomeScreen : Fragment() {
         observeTimer()
         
         Log.d("HomeScreen", "Loading home data...")
-        // 데이터 로드는 뷰모델이 이미 데이터를 가지고 있지 않을 때만 호출하도록 할 수도 있지만,
-        // 여기서는 간단히 매번 로드하되, 타이머 상태는 유지됨.
         homeViewModel.loadHomeData()
-        homeViewModel.checkTicketStatus() 
     }
 
     private fun setupTimerPicker() {
@@ -116,32 +113,14 @@ class HomeScreen : Fragment() {
                 is Result.Error -> {
                     binding.progressBar.isVisible = false
                     binding.textPresentCount.text = "-"
-                    Log.e("HomeFragment", "Measurement Error", result.exception)
+                    // 태그를 HomeScreen으로 수정하고, 에러 로그 레벨을 조정하거나 메시지를 명확히 함
+                    Log.w("HomeScreen", "Measurement failed (Server might be down): ${result.exception.message}")
                 }
             }
         }
     }
     
     private fun observeHomeData() {
-        homeViewModel.notices.observe(viewLifecycleOwner) { result ->
-            when (result) {
-                is Result.Loading -> {
-                }
-                is Result.Success -> {
-                    val notices = result.data
-                    if (notices.isNotEmpty()) {
-                        val latestNotice = notices.first()
-                        binding.tvLatestNotice.text = latestNotice.title
-                    } else {
-                        binding.tvLatestNotice.text = getString(R.string.home_no_notice)
-                    }
-                }
-                is Result.Error -> {
-                    binding.tvLatestNotice.text = getString(R.string.home_notice_error)
-                }
-            }
-        }
-        
         homeViewModel.todayClasses.observe(viewLifecycleOwner) { result ->
             when (result) {
                 is Result.Loading -> { Log.d("HomeScreen", "Timetable Loading") }

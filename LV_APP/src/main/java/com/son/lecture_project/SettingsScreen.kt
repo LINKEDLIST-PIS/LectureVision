@@ -2,12 +2,11 @@ package com.son.lecture_project
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -109,23 +108,20 @@ class SettingsScreen : Fragment() {
             showLanguageDialog()
         }
         
-        // 비밀번호 변경
-        binding.btnChangePassword.setOnClickListener {
-            showChangePasswordDialog()
-        }
-        
-        // 이메일 변경
-        binding.btnChangeEmail.setOnClickListener {
-            showChangeEmailDialog()
-        }
-        
-        // 이용약관 & 개인정보처리방침
+        // 개인정보처리방침 (WebViewActivity로 이동)
         binding.btnPrivacyPolicy.setOnClickListener {
-             Toast.makeText(context, getString(R.string.msg_privacy_preparing), Toast.LENGTH_SHORT).show()
+             val intent = Intent(requireContext(), WebViewActivity::class.java)
+             intent.putExtra("URL", "https://app-privacy-policy-generator.nisrulz.com/") // 임시 URL
+             intent.putExtra("TITLE", "개인정보처리방침")
+             startActivity(intent)
         }
         
+        // 서비스 이용약관 (WebViewActivity로 이동)
         binding.btnTermsOfService.setOnClickListener {
-             Toast.makeText(context, getString(R.string.msg_terms_preparing), Toast.LENGTH_SHORT).show()
+             val intent = Intent(requireContext(), WebViewActivity::class.java)
+             intent.putExtra("URL", "https://termly.io/resources/templates/") // 임시 URL
+             intent.putExtra("TITLE", "서비스 이용약관")
+             startActivity(intent)
         }
 
         // 알림 설정 스위치
@@ -213,78 +209,6 @@ class SettingsScreen : Fragment() {
                 } else {
                     dialog.dismiss()
                 }
-            }
-            .setNegativeButton(getString(R.string.btn_cancel), null)
-            .show()
-    }
-
-    private fun showChangePasswordDialog() {
-        val layout = LinearLayout(requireContext())
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 40, 50, 10)
-
-        val currentPassInput = EditText(requireContext())
-        currentPassInput.hint = getString(R.string.hint_current_pw)
-        currentPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        layout.addView(currentPassInput)
-
-        val newPassInput = EditText(requireContext())
-        newPassInput.hint = getString(R.string.hint_new_pw)
-        newPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        layout.addView(newPassInput)
-        
-        val confirmPassInput = EditText(requireContext())
-        confirmPassInput.hint = getString(R.string.hint_confirm_pw)
-        confirmPassInput.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        layout.addView(confirmPassInput)
-
-        AlertDialog.Builder(requireContext())
-            .setTitle(getString(R.string.dialog_pw_title))
-            .setView(layout)
-            .setPositiveButton(getString(R.string.btn_change)) { _, _ ->
-                val currentPass = currentPassInput.text.toString()
-                val newPass = newPassInput.text.toString()
-                val confirmPass = confirmPassInput.text.toString()
-
-                if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
-                    Toast.makeText(context, getString(R.string.msg_fill_all), Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                
-                if (newPass != confirmPass) {
-                    Toast.makeText(context, getString(R.string.msg_pw_mismatch), Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                
-                Toast.makeText(context, getString(R.string.msg_pw_changed), Toast.LENGTH_LONG).show()
-            }
-            .setNegativeButton(getString(R.string.btn_cancel), null)
-            .show()
-    }
-    
-    private fun showChangeEmailDialog() {
-        val layout = LinearLayout(requireContext())
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 40, 50, 10)
-
-        val emailInput = EditText(requireContext())
-        emailInput.hint = getString(R.string.hint_new_email)
-        layout.addView(emailInput)
-
-        AlertDialog.Builder(requireContext())
-            .setTitle(getString(R.string.dialog_email_title))
-            .setView(layout)
-            .setPositiveButton(getString(R.string.btn_change)) { _, _ ->
-                val newEmail = emailInput.text.toString()
-
-                if (newEmail.isEmpty() || !newEmail.contains("@")) {
-                    Toast.makeText(context, getString(R.string.msg_invalid_email), Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                
-                TokenManager.saveUserEmail(newEmail)
-                binding.tvUserEmail.text = newEmail
-                Toast.makeText(context, getString(R.string.msg_email_changed), Toast.LENGTH_LONG).show()
             }
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()

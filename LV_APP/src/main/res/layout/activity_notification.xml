@@ -6,7 +6,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#F0F4F8"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"

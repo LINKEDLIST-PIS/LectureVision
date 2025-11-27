@@ -132,12 +132,60 @@ class TimetableScreen : Fragment() {
                 if (isFormatting || s == null) return
 
                 isFormatting = true
-                val length = s.length
+                
+                // 1. 입력 길이 제한 (5글자: HH:mm)
+                if (s.length > 5) {
+                    s.delete(5, s.length)
+                }
 
-                if (length == 2 && previousLength < 2) {
+                // 2. 자동 콜론 추가
+                if (s.length == 2 && previousLength < 2 && !s.contains(":")) {
                      s.append(":")
-                } else if (length > 5) {
-                     s.delete(5, length)
+                }
+                
+                val str = s.toString()
+                val colonIndex = str.indexOf(":")
+                
+                // 3. 시간(Hour) 검증: 0~23
+                if (colonIndex != -1) {
+                    val hourPart = str.substring(0, colonIndex)
+                    if (hourPart.isNotEmpty()) {
+                        val hour = hourPart.toIntOrNull()
+                        if (hour != null && hour > 23) {
+                            s.replace(0, colonIndex, "23")
+                        }
+                    }
+                } else {
+                    // 콜론이 없는 경우 (아직 시간 입력 중)
+                    if (str.length >= 2) {
+                        val hour = str.toIntOrNull()
+                        if (hour != null && hour > 23) {
+                            s.replace(0, 2, "23")
+                            // "23"으로 바꿨으니 콜론 추가
+                             if (!s.toString().contains(":")) s.append(":")
+                        }
+                    }
+                }
+                
+                // 4. 분(Minute) 검증: 0~59
+                if (colonIndex != -1 && str.length > colonIndex + 1) {
+                    val minPart = str.substring(colonIndex + 1)
+                    
+                    if (minPart.isNotEmpty()) {
+                         // 분의 첫 번째 자리가 6 이상이면 5로 변경 (59분이 최대이므로)
+                         val firstDigit = minPart[0].toString().toIntOrNull()
+                         if (firstDigit != null && firstDigit > 5) {
+                             s.replace(colonIndex + 1, colonIndex + 2, "5")
+                         }
+                         
+                         // 전체 분이 59 초과인지 확인
+                         if (minPart.length == 2) {
+                             val min = minPart.toIntOrNull()
+                             if (min != null && min > 59) {
+                                 s.replace(colonIndex + 1, str.length, "59")
+                             }
+                         }
+                    }
                 }
                 
                 isFormatting = false

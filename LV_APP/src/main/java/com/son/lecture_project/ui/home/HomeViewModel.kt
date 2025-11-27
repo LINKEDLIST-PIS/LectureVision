@@ -6,10 +6,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.son.lecture_project.data.api.RetrofitClient
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.data.model.ClassSchedule
-import com.son.lecture_project.data.model.Notice
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
@@ -29,9 +29,6 @@ class HomeViewModel : ViewModel() {
     private val _ticketStatus = MutableLiveData<Result<String>>()
     val ticketStatus: LiveData<Result<String>> = _ticketStatus
     
-    private val _notices = MutableLiveData<Result<List<Notice>>>()
-    val notices: LiveData<Result<List<Notice>>> = _notices
-
     private val _todayClasses = MutableLiveData<Result<List<ClassSchedule>>>()
     val todayClasses: LiveData<Result<List<ClassSchedule>>> = _todayClasses
 
@@ -47,92 +44,13 @@ class HomeViewModel : ViewModel() {
     // 현재 유효한 티켓 ID 저장용
     private var currentTicketId: String? = null
 
-    // 티켓 상태 확인 함수 (홈 화면 로딩 시 호출)
-    fun checkTicketStatus() {
-        viewModelScope.launch {
-            _ticketStatus.value = Result.Loading
-            try {
-                val token = TokenManager.getToken()
-                if (token == null) {
-                     _ticketStatus.value = Result.Error(Exception("로그인이 필요합니다."))
-                    return@launch
-                }
-                val authToken = "Bearer $token"
-                
-
-                if (currentTicketId != null) {
-                    validateTicket(authToken, currentTicketId!!)
-                } else {
-                    autoIssueTicket(authToken)
-                }
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error checking ticket status", e)
-                _ticketStatus.value = Result.Error(e)
-            }
-        }
-    }
-    
-    private suspend fun autoIssueTicket(authToken: String) {
-        try {
-            val createResponse = RetrofitClient.ticketApiService.createTicket(authToken)
-            
-            if (createResponse.isSuccessful && createResponse.body() != null) {
-                val newTicket = createResponse.body()!!
-                Log.d("HomeViewModel", "Auto-issued ticket: ${newTicket.ticketId}")
-                
-                newTicket.userId?.let {
-                    TokenManager.saveUserId(it)
-                }
-                loadHomeData()
-                
-                // 티켓 ID 저장
-                currentTicketId = newTicket.ticketId
-                
-                // 발급 성공 시 "티켓 보유중" 상태 업데이트
-                _ticketStatus.value = Result.Success("티켓 보유중 (자동 발급)")
-                
-            } else {
-                val errorMsg = createResponse.errorBody()?.string() ?: "Unknown error"
-                Log.e("HomeViewModel", "Auto-issue failed: $errorMsg")
-                _ticketStatus.value = Result.Success("티켓 없음 (자동 발급 실패)")
-            }
-        } catch (e: Exception) {
-             Log.e("HomeViewModel", "Auto-issue exception", e)
-            _ticketStatus.value = Result.Success("티켓 없음 (발급 오류)")
-        }
-    }
-
-    private suspend fun validateTicket(authToken: String, ticketId: String) {
-        try {
-            Log.d("HomeViewModel", "Validating ticket: $ticketId")
-            val validationResponse = RetrofitClient.ticketApiService.validateTicket(
-                authToken,
-                ticketId
-            )
-
-            if (validationResponse.isSuccessful && validationResponse.body() != null) {
-                val isValid = validationResponse.body()!!.isValid
-                val message = validationResponse.body()!!.message
-                Log.d("HomeViewModel", "Validation result: isValid=$isValid, msg=$message")
-                
-                // isValid가 true면 '검증됨', false면 '사용 대기중'으로 해석하여 표시
-                val statusText = if (isValid) "티켓 유효함 (사용됨)" else "티켓 보유중 (사용 가능)"
-                _ticketStatus.value = Result.Success(statusText)
-            } else {
-                // 검증 API 호출 실패 시에도 티켓 자체는 있으므로 기존 상태 유지하거나 경고 로그
-                Log.e("HomeViewModel", "Validation API failed")
-            }
-        } catch (e: Exception) {
-             Log.e("HomeViewModel", "Validation exception", e)
-        }
-    }
-
 
     fun startTimer(minutes: Int) {
         stopTimer()
         
         val durationInMillis = minutes * 60 * 1000L
         _isTimerRunning.value = true
+        _ticketStatus.value = Result.Success("측정 예약됨 (타이머 동작 중)")
         
         countDownTimer = object : CountDownTimer(durationInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -145,11 +63,11 @@ class HomeViewModel : ViewModel() {
             override fun onFinish() {
                 _timerText.postValue("00:00")
                 stopTimer()
+                
+                // 타이머 종료 시 티켓 발급 및 측정 시작
+                issueTicketAndMeasure()
             }
         }.start()
-        
-
-        startMeasurement()
     }
 
     fun stopTimer() {
@@ -159,42 +77,87 @@ class HomeViewModel : ViewModel() {
         _timerText.value = null
     }
     
-    // 인원 측정 시작 함수
-    fun startMeasurement() {
+    // 타이머 종료 후 티켓 발급 및 측정 수행 함수
+    private fun issueTicketAndMeasure() {
         viewModelScope.launch {
             _measurementResult.value = Result.Loading
+            _ticketStatus.value = Result.Loading
             try {
-                if (currentTicketId == null) {
-                    // 티켓이 없으면 에러 처리
-                    _measurementResult.value = Result.Error(IllegalStateException("유효한 티켓이 없습니다. 잠시 후 다시 시도해주세요."))
+                val token = TokenManager.getToken()
+                if (token == null) {
+                    _measurementResult.value = Result.Error(IllegalStateException("로그인이 필요합니다."))
+                    _ticketStatus.value = Result.Error(Exception("로그인 필요"))
                     return@launch
                 }
                 
-                // 모델 서버에 측정 요청
-                val response = RetrofitClient.modelApiService.measure(currentTicketId!!)
+                // 1. 티켓 발급 요청
+                Log.d("HomeViewModel", "Requesting ticket creation...")
+                val createResponse = RetrofitClient.ticketApiService.createTicket("Bearer $token")
                 
-                if (response.isSuccessful && response.body() != null) {
-                    val count = response.body()!!.peopleCount
-                    _measurementResult.value = Result.Success(count)
+                Log.d("HomeViewModel", "Create Ticket Code: ${createResponse.code()}")
+                
+                if (createResponse.isSuccessful && createResponse.body() != null) {
+                    val ticket = createResponse.body()!!
+                    
+                    // [DEBUG] 티켓 응답 전체 내용 출력
+                    Log.d("HomeViewModel", "Ticket Response Body: $ticket")
+                    Log.d("HomeViewModel", "Ticket JSON: ${Gson().toJson(ticket)}")
+                    
+                    val tId = ticket.ticketId
+                    Log.d("HomeViewModel", "Extracted Ticket ID: $tId")
+                    
+                    // ticketId가 null인지 확인
+                    if (tId.isNullOrEmpty()) {
+                         _measurementResult.value = Result.Error(Exception("발급된 티켓 ID가 유효하지 않습니다."))
+                         _ticketStatus.value = Result.Error(Exception("티켓 ID 오류 (Data: $ticket)"))
+                         return@launch
+                    }
+                    
+                    currentTicketId = tId
+                    Log.d("HomeViewModel", "Ticket issued successfully: $currentTicketId")
+                    
+                    // 티켓 발급은 성공했음을 알림 (일단 이 시점에 성공 상태로 업데이트)
+                    _ticketStatus.value = Result.Success("티켓 발급됨 (측정 서버 연결 시도 중...)")
+                    
+                    // 2. 발급된 티켓으로 인원 측정 요청 (별도 try-catch로 감싸서 티켓 발급 성공을 유지)
+                    try {
+                        val measureResponse = RetrofitClient.modelApiService.measure(tId)
+                        
+                        if (measureResponse.isSuccessful && measureResponse.body() != null) {
+                            val count = measureResponse.body()!!.peopleCount
+                            _measurementResult.value = Result.Success(count)
+                            _ticketStatus.value = Result.Success("측정 완료 (인원: $count)")
+                        } else {
+                            val errorMsg = measureResponse.errorBody()?.string() ?: "측정 실패"
+                            Log.e("HomeViewModel", "Measure Error: $errorMsg")
+                            // 측정 실패여도 티켓은 발급되었으므로 '티켓 발급됨' 상태는 유지하되 메시지만 변경
+                            _measurementResult.value = Result.Error(Exception("인원 측정 오류: ${measureResponse.code()}"))
+                            _ticketStatus.value = Result.Success("티켓 발급됨 (측정 실패)")
+                        }
+                    } catch (e: Exception) {
+                        // 모델 서버 연결 실패 (서버 미운영 등)
+                        Log.e("HomeViewModel", "Measure Server Error: ${e.localizedMessage}")
+                        _measurementResult.value = Result.Error(e)
+                        // ★ 핵심 수정: 측정 서버 오류가 나도 티켓 발급은 성공했으므로 Success 상태 유지
+                        _ticketStatus.value = Result.Success("티켓 발급됨 (측정 서버 미운영)")
+                    }
+                    
                 } else {
-                    val errorMsg = response.errorBody()?.string() ?: "측정 실패"
-                    _measurementResult.value = Result.Error(Exception("인원 측정 오류: ${response.code()}"))
+                    val errorMsg = createResponse.errorBody()?.string() ?: "티켓 발급 실패"
+                    Log.e("HomeViewModel", "Ticket Create Error Body: $errorMsg")
+                    _measurementResult.value = Result.Error(Exception("티켓 발급 오류: $errorMsg"))
+                    _ticketStatus.value = Result.Error(Exception("티켓 발급 실패: ${createResponse.code()}"))
                 }
             } catch (e: Exception) {
+                Log.e("HomeViewModel", "Exception during issueTicketAndMeasure", e)
                 _measurementResult.value = Result.Error(e)
+                _ticketStatus.value = Result.Error(e)
             }
         }
     }
 
     fun loadHomeData() {
-        loadNotices()
         loadTodayTimetable()
-    }
-
-    private fun loadNotices() {
-        viewModelScope.launch {
-            _notices.value = Result.Success(emptyList())
-        }
     }
 
     private fun loadTodayTimetable() {
