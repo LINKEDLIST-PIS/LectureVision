@@ -9,6 +9,9 @@
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
         <item name="android:statusBarColor">?attr/colorPrimary</item>
+        
+        <!-- Default Alert Dialog Theme -->
+        <item name="materialAlertDialogTheme">@style/Theme.Lecture_project.AlertDialog</item>
     </style>
 
     <!-- 스플래시 테마 -->
@@ -24,5 +27,21 @@
         <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="31">@android:color/transparent</item>
         <!-- 스플래시 지속 시간을 0으로 설정 -->
         <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="31">0</item>
+    </style>
+
+    <!-- Custom Alert Dialog Theme -->
+    <style name="Theme.Lecture_project.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:background">@color/bg_card</item>
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="colorPrimary">@color/btn_primary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.MaterialComponents.Button.TextButton.Dialog</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.MaterialComponents.Button.TextButton.Dialog</item>
+    </style>
+
+    <style name="Widget.MaterialComponents.Button.TextButton.Dialog" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/btn_primary</item>
     </style>
 </resources>

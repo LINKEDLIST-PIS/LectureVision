@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/bg_card">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,7 +28,7 @@
                 android:textSize="12sp"
                 android:textColor="#FFFFFF"
                 android:background="@drawable/bg_chip"
-                android:backgroundTint="#3B82F6"
+                android:backgroundTint="@color/sky_blue_500"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="4dp"
                 android:layout_marginRight="8dp"/>
@@ -40,7 +41,7 @@
                 android:text="알림 제목"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="#1F2937"/>
+                android:textColor="@color/text_primary"/>
         </LinearLayout>
 
         <TextView
@@ -50,7 +51,7 @@
             android:layout_marginTop="8dp"
             android:text="알림 내용이 여기에 표시됩니다."
             android:textSize="14sp"
-            android:textColor="#4B5563"/>
+            android:textColor="@color/text_secondary"/>
 
         <TextView
             android:id="@+id/tv_time"
@@ -60,6 +61,6 @@
             android:layout_marginTop="8dp"
             android:text="2023-10-27"
             android:textSize="12sp"
-            android:textColor="#9CA3AF"/>
+            android:textColor="@color/text_secondary"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

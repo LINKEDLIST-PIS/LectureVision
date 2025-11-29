@@ -5,9 +5,9 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.son.lecture_project.databinding.ActivitySignupBinding
 import com.son.lecture_project.ui.auth.SignupViewModel
 import com.son.lecture_project.ui.home.Result
@@ -98,7 +98,7 @@ class SignupActivity : AppCompatActivity() {
                     binding.buttonSignup.isEnabled = true
                     
 
-                    AlertDialog.Builder(this)
+                    MaterialAlertDialogBuilder(this, R.style.Theme_Lecture_project_AlertDialog)
                         .setTitle("회원가입 요청 완료")
                         .setMessage("회원가입 요청이 성공했습니다.\n이메일에서 인증을 완료해주세요.")
                         .setPositiveButton("확인") { dialog, _ ->

@@ -78,7 +78,8 @@ class HomeViewModel : ViewModel() {
     }
     
     // 타이머 종료 후 티켓 발급 및 측정 수행 함수
-    private fun issueTicketAndMeasure() {
+    // public으로 변경하여 외부(SettingsScreen 등)에서 호출 가능하도록 함
+    fun issueTicketAndMeasure() {
         viewModelScope.launch {
             _measurementResult.value = Result.Loading
             _ticketStatus.value = Result.Loading

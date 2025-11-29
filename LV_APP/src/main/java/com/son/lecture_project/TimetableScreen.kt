@@ -1,6 +1,5 @@
 package com.son.lecture_project
 
-import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
@@ -15,6 +14,7 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.databinding.ScreenTimetableBinding
@@ -221,7 +221,7 @@ class TimetableScreen : Fragment() {
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerDay.adapter = spinnerAdapter
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setView(dialogView)
             .setTitle(getString(R.string.dialog_class_add_title))
             .setPositiveButton(getString(R.string.dialog_class_add_btn)) { _, _ ->
@@ -258,7 +258,7 @@ class TimetableScreen : Fragment() {
 
     private fun showEditDeleteDialog(classItem: ClassSchedule) {
         val options = arrayOf(getString(R.string.dialog_option_edit), getString(R.string.dialog_option_delete))
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setTitle(getString(R.string.dialog_manage_title, classItem.name))
             .setItems(options) { _, which ->
                 when (which) {
@@ -301,7 +301,7 @@ class TimetableScreen : Fragment() {
             spinnerDay.setSelection(dayIndex)
         }
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setView(dialogView)
             .setTitle(getString(R.string.dialog_class_edit_title))
             .setPositiveButton(getString(R.string.dialog_class_edit_btn)) { _, _ ->

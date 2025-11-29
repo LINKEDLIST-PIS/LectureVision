@@ -220,7 +220,7 @@
                         android:layout_centerVertical="true"/>
                 </RelativeLayout>
                 
-                <!-- 모델 서버 주소 입력 (디버그 모드 활성화 시 표시) -->
+                <!-- 모델 서버 주소 입력 및 토큰/티켓 테스트 (디버그 모드 활성화 시 표시) -->
                 <LinearLayout
                     android:id="@+id/layoutModelUrl"
                     android:layout_width="match_parent"
@@ -259,6 +259,36 @@
                         android:text="@string/btn_connect"
                         android:layout_gravity="end"
                         android:layout_marginTop="8dp"/>
+
+                    <!-- 토큰 상태 표시 -->
+                     <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="토큰 상태"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvTokenStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="토큰 없음"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_primary"
+                        android:background="@drawable/bg_input_field"
+                        android:padding="12dp" />
+
+                    <!-- 티켓 수동 발급 버튼 -->
+                    <Button
+                        android:id="@+id/btnManualTicket"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="티켓 수동 발급"
+                        android:layout_marginTop="16dp"
+                        android:backgroundTint="@color/teal_700"/>
+
                 </LinearLayout>
 
             </LinearLayout>

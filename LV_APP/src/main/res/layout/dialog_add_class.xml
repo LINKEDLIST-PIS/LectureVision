@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:background="@color/bg_card">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,7 +17,7 @@
             android:text="수업 추가/편집"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#1E293B"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="16dp"/>
 
         <!-- 수업명 입력 (한글 입력 가능하도록 text 타입 명시) -->
@@ -23,6 +25,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="수업명"
+            android:textColorHint="@color/text_secondary"
+            app:hintTextColor="@color/btn_primary"
+            app:boxStrokeColor="@color/stroke_color"
             android:layout_marginBottom="12dp">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -30,6 +35,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
+                android:textColor="@color/text_primary"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -38,12 +44,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="요일"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="4dp"/>
 
         <Spinner
             android:id="@+id/spinner_day"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:background="@drawable/bg_input_field"
             android:layout_marginBottom="12dp" />
 
         <!-- 시간 입력 -->
@@ -58,6 +66,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="시작 시간 (예: 09:00)"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/btn_primary"
+                app:boxStrokeColor="@color/stroke_color"
                 android:layout_marginEnd="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -65,6 +76,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="time"
+                    android:textColor="@color/text_primary"
                     android:text="09:00"/>
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -72,13 +84,17 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:hint="종료 시간 (예: 10:30)">
+                android:hint="종료 시간 (예: 10:30)"
+                android:textColorHint="@color/text_secondary"
+                app:hintTextColor="@color/btn_primary"
+                app:boxStrokeColor="@color/stroke_color">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_end_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="time"
+                    android:textColor="@color/text_primary"
                     android:text="10:30"/>
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
@@ -87,6 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="색상 선택"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="8dp"/>
 

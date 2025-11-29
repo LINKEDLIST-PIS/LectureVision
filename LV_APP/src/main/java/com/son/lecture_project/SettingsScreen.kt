@@ -1,9 +1,9 @@
 package com.son.lecture_project
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +11,14 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.son.lecture_project.data.api.RetrofitClient
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.ScreenSettingsBinding
+import com.son.lecture_project.ui.home.HomeViewModel
+import com.son.lecture_project.ui.home.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,6 +27,9 @@ class SettingsScreen : Fragment() {
 
     private var _binding: ScreenSettingsBinding? = null
     private val binding get() = _binding!!
+    
+    // Ticket 발급 로직 재사용을 위해 HomeViewModel 사용 (activityViewModels로 공유)
+    private val homeViewModel: HomeViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,6 +45,8 @@ class SettingsScreen : Fragment() {
         loadSettings()
         loadUserInfo()
         setupClickListeners()
+        
+        observeTicketStatus()
 
         try {
             val packageInfo = requireActivity().packageManager.getPackageInfo(requireActivity().packageName, 0)
@@ -83,11 +92,29 @@ class SettingsScreen : Fragment() {
             binding.etModelServerUrl.setText(savedUrl)
         }
         
+        // 현재 토큰 상태 표시
+        updateTokenStatusUI()
+        
         // 현재 언어 설정에 따라 텍스트 업데이트
         val currentLocale = AppCompatDelegate.getApplicationLocales()[0]
         val langCode = currentLocale?.language ?: TokenManager.getLanguage()
         
         binding.tvCurrentLanguage.text = if (langCode == "en") getString(R.string.current_lang_en) else getString(R.string.current_lang_ko)
+    }
+    
+    private fun updateTokenStatusUI() {
+        val token = TokenManager.getToken()
+        if (token.isNullOrEmpty()) {
+             binding.tvTokenStatus.text = "토큰 없음"
+        } else {
+             // 토큰의 앞 10자리와 끝 5자리만 보여줌
+             val maskedToken = if (token.length > 15) {
+                 "${token.substring(0, 10)}...${token.substring(token.length - 5)}"
+             } else {
+                 token
+             }
+             binding.tvTokenStatus.text = "보유 중 ($maskedToken)"
+        }
     }
 
     private fun setupClickListeners() {
@@ -141,6 +168,9 @@ class SettingsScreen : Fragment() {
         binding.switchDebugMode.setOnCheckedChangeListener { _, isChecked ->
             TokenManager.setDebugMode(isChecked)
             binding.layoutModelUrl.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (isChecked) {
+                updateTokenStatusUI()
+            }
         }
         
         // 모델 서버 URL 저장 및 연결 테스트 버튼
@@ -179,10 +209,37 @@ class SettingsScreen : Fragment() {
                 Toast.makeText(context, "URL을 입력해주세요.", Toast.LENGTH_SHORT).show()
             }
         }
+        
+        // 티켓 수동 발급 버튼 (테스트용)
+        binding.btnManualTicket.setOnClickListener {
+            Toast.makeText(context, "티켓 발급 및 측정을 시도합니다...", Toast.LENGTH_SHORT).show()
+            homeViewModel.issueTicketAndMeasure()
+        }
 
         // 로그아웃
         binding.btnLogout.setOnClickListener {
             showLogoutConfirmDialog()
+        }
+    }
+    
+    private fun observeTicketStatus() {
+        homeViewModel.ticketStatus.observe(viewLifecycleOwner) { result ->
+            // Settings 화면이 visible일 때만 Toast 등을 띄우거나 UI 업데이트
+            // 여기서는 로그만 찍거나 간단한 토스트 처리 (HomeViewModel에서 이미 처리된 상태가 올 수 있음)
+            if (binding.layoutModelUrl.visibility == View.VISIBLE) {
+                when (result) {
+                    is Result.Success -> {
+                        // 필요시 여기에 추가적인 UI 피드백
+                        Log.d("SettingsScreen", "Ticket Status: ${result.data}")
+                    }
+                    is Result.Error -> {
+                        Log.e("SettingsScreen", "Ticket Error: ${result.exception.message}")
+                    }
+                    is Result.Loading -> {
+                        
+                    }
+                }
+            }
         }
     }
 
@@ -193,7 +250,7 @@ class SettingsScreen : Fragment() {
         
         val checkedItem = if (currentLang == "en") 1 else 0
 
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setTitle(getString(R.string.dialog_lang_title))
             .setSingleChoiceItems(languages, checkedItem) { dialog, which ->
                 val langCode = if (which == 0) "ko" else "en"
@@ -215,7 +272,7 @@ class SettingsScreen : Fragment() {
     }
 
     private fun showLogoutConfirmDialog() {
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setTitle(getString(R.string.dialog_logout_title))
             .setMessage(getString(R.string.dialog_logout_message))
             .setPositiveButton(getString(R.string.action_logout)) { _, _ ->
