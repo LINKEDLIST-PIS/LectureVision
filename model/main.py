@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
+import threading
 import uvicorn
-
-from .camera import capture_frame
+import cv2
+from .camera import capture_frame, current_camera_url, set_camera_url
 from .detector import detect_people
 from .processing import apply_mosaic
 from .uploader import upload_image, ensure_token
-from .monitor import start_monitoring, pause_monitor
+from .monitor import CameraConfigDialog, start_monitoring, pause_monitor
 import requests
 from . import config
 
@@ -13,6 +14,9 @@ model = FastAPI(
     title="LectureVision Model Server",
     version="0.3.0"
 )
+
+def run_server():
+    uvicorn.run("model.main:model", host="0.0.0.0", port=8000, reload=False)
 
 def validate_ticket(ticket: str) -> dict | None:
     token = ensure_token()
@@ -49,9 +53,10 @@ def measure(ticket: str):
 
     return {
         "people_count": people_count,
-        "api_response": resp.json()
+        "api_response": api_response
     }
 
 if __name__ == "__main__":
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
     start_monitoring()
-    uvicorn.run("model.main:model", host="0.0.0.0", port=8000, reload=True)
