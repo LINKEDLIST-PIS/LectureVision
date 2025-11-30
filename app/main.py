@@ -104,7 +104,7 @@ async def get_uploads(
     client_id = payload["sub"]
 
     rows = await uploads.list_uploads(db, skip=skip, limit=limit, client_id=client_id)
-    return [schemas.UploadResponse(**dict(r)) for r in rows]
+    return [schemas.UploadResponse(**dict(r._mapping)) for r in rows]
 
 app.include_router(router)
 app.include_router(accounts_router)
