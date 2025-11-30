@@ -71,6 +71,12 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
         return cachedSchedules.filter { it.name == subjectName }
     }
 
+    // 과목별 총 인원수 맵 반환
+    fun getSubjectTotalCountMap(): Map<String, Int> {
+        return cachedSchedules.groupBy { it.name }
+            .mapValues { (_, list) -> list.maxOfOrNull { it.totalStudents } ?: 0 }
+    }
+
     private suspend fun getLocalSchedules(): List<ClassSchedule> {
         return withContext(Dispatchers.IO) {
             val json = prefs.getString(KEY_TIMETABLE, null)

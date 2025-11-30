@@ -16,7 +16,9 @@ data class ClassSchedule(
     @SerializedName("classroom")
     val classroom: String?,
     @SerializedName("color_hex")
-    val color: String?
+    val color: String?,
+    @SerializedName("total_students")
+    val totalStudents: Int = 0 // 총 인원수 필드 추가 (기본값 0)
 )
 
 data class ClassScheduleRequest(
@@ -33,5 +35,7 @@ data class ClassScheduleRequest(
     @SerializedName("color_hex")
     val color: String?,
     @SerializedName("user_id")
-    val userId: String
+    val userId: String,
+    @SerializedName("total_students")
+    val totalStudents: Int = 0
 )

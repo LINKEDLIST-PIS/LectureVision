@@ -20,7 +20,7 @@
             android:textColor="@color/text_primary"
             android:layout_marginBottom="16dp"/>
 
-        <!-- 수업명 입력 (한글 입력 가능하도록 text 타입 명시) -->
+        <!-- 수업명 입력 -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -59,7 +59,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false">
+            android:baselineAligned="false"
+            android:layout_marginBottom="12dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="0dp"
@@ -98,6 +99,25 @@
                     android:text="10:30"/>
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
+
+        <!-- 총 인원수 입력 (추가) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="총 인원수 (명)"
+            android:textColorHint="@color/text_secondary"
+            app:hintTextColor="@color/btn_primary"
+            app:boxStrokeColor="@color/stroke_color"
+            android:layout_marginBottom="12dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_total_students"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:textColor="@color/text_primary"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:layout_width="wrap_content"

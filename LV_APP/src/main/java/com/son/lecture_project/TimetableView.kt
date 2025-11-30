@@ -59,7 +59,7 @@ class TimetableView @JvmOverloads constructor(
     private val classBlockPaint = Paint()
     private val classTextPaint = TextPaint().apply { 
         color = Color.WHITE
-        textSize = dpToPx(12f) 
+        textSize = dpToPx(11f) // 글자 크기 약간 줄임 (정보량 증가 대응)
     }
 
     // 터치 영역 감지용 리스트
@@ -182,14 +182,18 @@ class TimetableView @JvmOverloads constructor(
     }
 
     private fun drawClassText(canvas: Canvas, rect: RectF, classInfo: ClassSchedule) {
-        val text = "${classInfo.name}\n${classInfo.startTime}"
+        // 수업명, 시작~종료 시간, 총 인원수 표시
+        val totalInfo = if (classInfo.totalStudents > 0) "\n(총 ${classInfo.totalStudents}명)" else ""
+        val text = "${classInfo.name}\n${classInfo.startTime}~${classInfo.endTime}$totalInfo"
         
         // 텍스트가 영역을 벗어나지 않도록 StaticLayout 사용
         val textWidth = (rect.width() - dpToPx(8f)).toInt()
         if (textWidth > 0) {
             val staticLayout = StaticLayout.Builder.obtain(
                 text, 0, text.length, classTextPaint, textWidth
-            ).build()
+            )
+            .setAlignment(android.text.Layout.Alignment.ALIGN_CENTER) // 가운데 정렬
+            .build()
             
             canvas.save()
             // 텍스트를 블록 중앙에 위치

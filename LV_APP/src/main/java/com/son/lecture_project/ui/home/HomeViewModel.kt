@@ -1,18 +1,24 @@
 package com.son.lecture_project.ui.home
 
+import android.app.Application
+import android.content.Context
 import android.os.CountDownTimer
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.son.lecture_project.data.api.RetrofitClient
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.data.model.ClassSchedule
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 
 // 데이터 변경 이벤트를 한 번만 처리하기 위한 Wrapper
 open class Event<out T>(private val content: T) {
@@ -43,7 +49,8 @@ data class ComparisonResult(
     val endCount: Int
 )
 
-class HomeViewModel : ViewModel() {
+// AndroidViewModel 상속으로 변경 (Context 사용을 위해)
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     // Event Wrapper 적용
     private val _measurementResult = MutableLiveData<Event<Result<Int>>>()
@@ -62,8 +69,7 @@ class HomeViewModel : ViewModel() {
     private val _isTimerRunning = MutableLiveData<Boolean>(false)
     val isTimerRunning: LiveData<Boolean> = _isTimerRunning
 
-    // 비교 결과 알림 (여기도 Event 적용 고려 가능하나, 비교 결과는 다이얼로그라 괜찮을 수도 있음. 
-    // 하지만 화면 회전 시 다이얼로그가 또 뜨는걸 막으려면 적용하는 게 좋음. 여기선 일단 유지하거나 적용)
+    // 비교 결과 알림
     private val _comparisonResult = MutableLiveData<Event<ComparisonResult>>()
     val comparisonResult: LiveData<Event<ComparisonResult>> = _comparisonResult
 
@@ -75,6 +81,10 @@ class HomeViewModel : ViewModel() {
     // 시작 시 측정값 저장용
     private var startCount: Int? = null
 
+    // 시간표 로컬 데이터 접근용
+    private val gson = Gson()
+    private val prefs = application.getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
+    private val KEY_TIMETABLE = "local_timetable_list"
 
     fun startTimer(minutes: Int) {
         stopTimer()
@@ -114,11 +124,8 @@ class HomeViewModel : ViewModel() {
     }
     
     // 타이머 종료 후 티켓 발급 및 측정 수행 함수
-    // isStart: true면 시작 측정, false면 종료 측정
     fun issueTicketAndMeasure(isStart: Boolean = false) {
         viewModelScope.launch {
-            // 로딩 상태는 이벤트로 보낼 필요 없음 (UI 상태 표시용)
-            // _measurementResult.value = Event(Result.Loading) 
             _ticketStatus.value = Result.Loading
             try {
                 val token = TokenManager.getToken()
@@ -151,15 +158,12 @@ class HomeViewModel : ViewModel() {
                         if (measureResponse.isSuccessful && measureResponse.body() != null) {
                             val count = measureResponse.body()!!.peopleCount
                             
-                            // 측정 성공 이벤트 발생
                             _measurementResult.value = Event(Result.Success(count))
-                            
                             _ticketStatus.value = Result.Success("측정 완료 (인원: $count)")
                             
                             if (isStart) {
-                                startCount = count // 시작 측정값 저장
+                                startCount = count 
                             } else {
-                                // 종료 측정값일 경우, 시작값과 함께 결과 전송
                                 val start = startCount ?: 0 
                                 _comparisonResult.value = Event(ComparisonResult(start, count))
                             }
@@ -186,12 +190,41 @@ class HomeViewModel : ViewModel() {
 
     private fun loadTodayTimetable() {
         viewModelScope.launch {
-            _todayClasses.value = Result.Success(emptyList())
+            _todayClasses.value = Result.Loading
+            try {
+                val allSchedules = getLocalSchedules()
+                val todayName = getTodayDayName()
+                
+                // 오늘 요일이 포함된 수업만 필터링
+                val todaySchedules = allSchedules.filter { it.day.contains(todayName) }
+                    .sortedBy { it.startTime } // 시작 시간 순 정렬
+                
+                _todayClasses.value = Result.Success(todaySchedules)
+            } catch (e: Exception) {
+                _todayClasses.value = Result.Error(e)
+            }
+        }
+    }
+    
+    private suspend fun getLocalSchedules(): List<ClassSchedule> {
+        return withContext(Dispatchers.IO) {
+            val json = prefs.getString(KEY_TIMETABLE, null)
+            if (json.isNullOrEmpty()) {
+                emptyList()
+            } else {
+                try {
+                    val type = object : TypeToken<List<ClassSchedule>>() {}.type
+                    gson.fromJson(json, type)
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }
         }
     }
     
     private fun getTodayDayName(): String {
-        val calendar = Calendar.getInstance()
+        // 한국 시간(KST) 기준으로 요일 계산
+        val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
         val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
         return when (dayOfWeek) {
             Calendar.SUNDAY -> "일"

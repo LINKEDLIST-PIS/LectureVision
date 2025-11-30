@@ -55,7 +55,8 @@ class TimetableScreen : Fragment() {
             if (isEditMode) {
                 showEditDeleteDialog(classItem)
             } else {
-                Toast.makeText(context, "${classItem.name} (${classItem.startTime}~${classItem.endTime})", Toast.LENGTH_SHORT).show()
+                val totalInfo = if (classItem.totalStudents > 0) " (총 ${classItem.totalStudents}명)" else ""
+                Toast.makeText(context, "${classItem.name} (${classItem.startTime}~${classItem.endTime})$totalInfo", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -200,6 +201,7 @@ class TimetableScreen : Fragment() {
         val spinnerDay = dialogView.findViewById<Spinner>(R.id.spinner_day)
         val etStartTime = dialogView.findViewById<TextInputEditText>(R.id.et_start_time)
         val etEndTime = dialogView.findViewById<TextInputEditText>(R.id.et_end_time)
+        val etTotalStudents = dialogView.findViewById<TextInputEditText>(R.id.et_total_students) // 추가됨
         
         // 시간 입력 포맷터 적용
         setupTimeInputFormatter(etStartTime)
@@ -229,6 +231,8 @@ class TimetableScreen : Fragment() {
                 val day = spinnerDay.selectedItem.toString()
                 val startTimeStr = etStartTime.text.toString().trim()
                 val endTimeStr = etEndTime.text.toString().trim()
+                val totalStudentsStr = etTotalStudents.text.toString().trim()
+                val totalStudents = totalStudentsStr.toIntOrNull() ?: 0
                 
                 if (name.isEmpty()) {
                      Toast.makeText(context, getString(R.string.msg_enter_class_name), Toast.LENGTH_SHORT).show()
@@ -241,6 +245,18 @@ class TimetableScreen : Fragment() {
                     return@setPositiveButton
                 }
 
+                // 09:00 이전 시간 입력 제한
+                if (isTimeTooEarly(startTimeStr)) {
+                    Toast.makeText(context, "수업 시작 시간은 09:00 이후여야 합니다.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                // 중복 시간 체크 로직 추가
+                if (isTimeOverlapping(day, startTimeStr, endTimeStr, null)) {
+                    Toast.makeText(context, "이미 수업이 있습니다", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
                 val color = when {
                     radioRed.isChecked -> "#FF6B6B"
                     radioBlue.isChecked -> "#45B7D1"
@@ -249,8 +265,8 @@ class TimetableScreen : Fragment() {
                     else -> "#FF6B6B"
                 }
 
-                // ViewModel을 통한 API 호출로 변경
-                timetableViewModel.addClass(name, day, startTimeStr, endTimeStr, null, color)
+                // ViewModel을 통한 API 호출로 변경 (totalStudents 추가)
+                timetableViewModel.addClass(name, day, startTimeStr, endTimeStr, null, color, totalStudents)
             }
             .setNegativeButton(getString(R.string.dialog_class_cancel_btn), null)
             .show()
@@ -276,14 +292,29 @@ class TimetableScreen : Fragment() {
         val spinnerDay = dialogView.findViewById<Spinner>(R.id.spinner_day)
         val etStartTime = dialogView.findViewById<TextInputEditText>(R.id.et_start_time)
         val etEndTime = dialogView.findViewById<TextInputEditText>(R.id.et_end_time)
+        val etTotalStudents = dialogView.findViewById<TextInputEditText>(R.id.et_total_students) // 추가됨
 
         etClassName.setText(classItem.name)
         etStartTime.setText(classItem.startTime)
         etEndTime.setText(classItem.endTime)
+        etTotalStudents.setText(if (classItem.totalStudents > 0) classItem.totalStudents.toString() else "")
 
         // 시간 입력 포맷터 적용
         setupTimeInputFormatter(etStartTime)
         setupTimeInputFormatter(etEndTime)
+
+        val radioRed = dialogView.findViewById<RadioButton>(R.id.radio_red)
+        val radioBlue = dialogView.findViewById<RadioButton>(R.id.radio_blue)
+        val radioYellow = dialogView.findViewById<RadioButton>(R.id.radio_yellow)
+        val radioGreen = dialogView.findViewById<RadioButton>(R.id.radio_green)
+        
+        // 색상 초기화 (기존 색상에 맞춰 라디오 버튼 체크)
+        when (classItem.color) {
+            "#FF6B6B" -> radioRed.isChecked = true
+            "#45B7D1" -> radioBlue.isChecked = true
+            "#FFD93D" -> radioYellow.isChecked = true
+            "#4ECDC4" -> radioGreen.isChecked = true
+        }
 
         val days = arrayOf(
             getString(R.string.day_monday), 
@@ -309,15 +340,37 @@ class TimetableScreen : Fragment() {
                 val day = spinnerDay.selectedItem.toString()
                 val startTimeStr = etStartTime.text.toString().trim()
                 val endTimeStr = etEndTime.text.toString().trim()
+                val totalStudentsStr = etTotalStudents.text.toString().trim()
+                val totalStudents = totalStudentsStr.toIntOrNull() ?: 0
                 
                 // 시간 유효성 검사
                 if (!isValidTimeFormat(startTimeStr) || !isValidTimeFormat(endTimeStr)) {
                     Toast.makeText(context, "시간 형식이 올바르지 않습니다. (HH:mm)", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
+
+                // 09:00 이전 시간 입력 제한
+                if (isTimeTooEarly(startTimeStr)) {
+                    Toast.makeText(context, "수업 시작 시간은 09:00 이후여야 합니다.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                // 중복 시간 체크 로직 추가 (수정 시에는 자기 자신은 제외하고 체크해야 함)
+                if (isTimeOverlapping(day, startTimeStr, endTimeStr, classItem.id)) {
+                    Toast.makeText(context, "이미 수업이 있습니다", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
                 
-                // ViewModel을 통한 API 호출로 변경
-                timetableViewModel.updateClass(classItem.id, name, day, startTimeStr, endTimeStr, classItem.classroom, classItem.color)
+                val color = when {
+                    radioRed.isChecked -> "#FF6B6B"
+                    radioBlue.isChecked -> "#45B7D1"
+                    radioYellow.isChecked -> "#FFD93D"
+                    radioGreen.isChecked -> "#4ECDC4"
+                    else -> classItem.color
+                }
+                
+                // ViewModel을 통한 API 호출로 변경 (totalStudents 추가)
+                timetableViewModel.updateClass(classItem.id, name, day, startTimeStr, endTimeStr, classItem.classroom, color, totalStudents)
             }
             .setNegativeButton(getString(R.string.dialog_class_cancel_btn), null)
             .show()
@@ -330,6 +383,61 @@ class TimetableScreen : Fragment() {
 
     private fun isValidTimeFormat(time: String): Boolean {
         return time.matches(Regex("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"))
+    }
+
+    // 09:00 이전인지 확인하는 함수 추가
+    private fun isTimeTooEarly(timeStr: String): Boolean {
+        try {
+            val parts = timeStr.split(":")
+            val hour = parts[0].toInt()
+            // 9시보다 작으면(0~8시) true 반환
+            return hour < 9
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    // 시간 중복 확인 함수 추가
+    private fun isTimeOverlapping(day: String, newStartTime: String, newEndTime: String, currentClassId: Int?): Boolean {
+        val newStart = parseTimeToMinutes(newStartTime)
+        val newEnd = parseTimeToMinutes(newEndTime)
+
+        if (newStart == -1 || newEnd == -1) return false
+
+        // 같은 요일인 수업들만 필터링
+        val sameDayClasses = classItems.filter { it.day == day }
+
+        for (item in sameDayClasses) {
+            // 수정 시 자기 자신은 제외
+            if (currentClassId != null && item.id == currentClassId) continue
+
+            val existingStart = parseTimeToMinutes(item.startTime)
+            val existingEnd = parseTimeToMinutes(item.endTime)
+
+            if (existingStart == -1 || existingEnd == -1) continue
+
+            // 겹치는지 확인
+            // (새로운 시작 시간이 기존 수업 시간 내에 있거나) OR (새로운 종료 시간이 기존 수업 시간 내에 있거나) OR
+            // (기존 시작 시간이 새로운 수업 시간 내에 있거나) -> 즉, 어느 한 쪽이 다른 쪽을 포함하거나 겹치는 경우
+            
+            // 1. 완전히 겹치거나 포함되는 경우 처리
+            // newStart < existingEnd && newEnd > existingStart
+            if (newStart < existingEnd && newEnd > existingStart) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun parseTimeToMinutes(timeStr: String): Int {
+        return try {
+            val parts = timeStr.split(":")
+            val h = parts[0].toInt()
+            val m = if (parts.size > 1) parts[1].toInt() else 0
+            h * 60 + m
+        } catch (e: Exception) {
+            -1
+        }
     }
 
     override fun onDestroyView() {

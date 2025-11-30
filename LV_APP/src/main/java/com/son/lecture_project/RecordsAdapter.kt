@@ -11,7 +11,10 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.abs
 
-class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<RecordsAdapter.RecordViewHolder>() {
+class RecordsAdapter(
+    private var records: List<Upload>,
+    private var subjectTotalCountMap: Map<String, Int> = emptyMap()
+) : RecyclerView.Adapter<RecordsAdapter.RecordViewHolder>() {
 
     // 과목별 색상을 지정하기 위한 팔레트
     private val colorPalette = listOf(
@@ -38,8 +41,9 @@ class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<R
 
     override fun getItemCount(): Int = records.size
 
-    fun updateData(newRecords: List<Upload>) {
+    fun updateData(newRecords: List<Upload>, newSubjectTotalCountMap: Map<String, Int>) {
         this.records = newRecords
+        this.subjectTotalCountMap = newSubjectTotalCountMap
         notifyDataSetChanged()
     }
 
@@ -48,8 +52,6 @@ class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<R
 
             val formattedDate = try {
                 // 1. 서버 시간(UTC) 파싱 설정
-                // Z가 있거나 없을 수 있는 포맷 대응 (보통 ISO 8601)
-                // 여기서는 단순화를 위해 Z를 제거하고 파싱
                 val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
                 inputFormat.timeZone = TimeZone.getTimeZone("UTC") // 입력은 UTC 기준
 
@@ -89,9 +91,18 @@ class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<R
             val color = Color.parseColor(colorPalette[colorIndex])
             binding.cvColor.setCardBackgroundColor(color)
 
-            // 2. 인원 정보 설정
-            binding.tvTotalCount.text = "총인원 : ${record.peopleCount}명"
-            binding.tvAbsentCount.text = "결석 : 0명"
+            // 2. 인원 정보 설정 (결석 수 계산 적용)
+            val totalStudents = subjectTotalCountMap[courseName] ?: 0
+            val measuredCount = record.peopleCount
+            
+            binding.tvTotalCount.text = "출석 : ${measuredCount}명"
+
+            if (totalStudents > 0) {
+                val absentCount = (totalStudents - measuredCount).coerceAtLeast(0)
+                binding.tvAbsentCount.text = "결석 : ${absentCount}명"
+            } else {
+                binding.tvAbsentCount.text = "결석 : -명"
+            }
         }
     }
 }

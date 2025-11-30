@@ -27,11 +27,26 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
     private val prefs = application.getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
     private val KEY_TIMETABLE = "local_timetable_list"
 
+    init {
+        // ViewModel 생성 시 자동으로 데이터 로드 및 검증(잘못된 시간 삭제) 수행
+        loadTimetable()
+    }
+
     fun loadTimetable() {
         viewModelScope.launch {
             _timetable.value = Result.Loading
             try {
-                val list = getLocalTimetable()
+                // 1. 로컬 시간표 불러오기
+                val list = getLocalTimetable().toMutableList()
+                
+                // 2. 유효하지 않은 시간(09:00 이전)의 수업이 있는지 확인하고 삭제
+                val invalidClasses = list.filter { isTimeTooEarly(it.startTime) }
+                
+                if (invalidClasses.isNotEmpty()) {
+                    list.removeAll(invalidClasses)
+                    saveLocalTimetable(list) // 삭제된 상태로 다시 저장 (영구 삭제)
+                }
+                
                 _timetable.value = Result.Success(list)
             } catch (e: Exception) {
                 _timetable.value = Result.Error(e)
@@ -39,10 +54,16 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun addClass(name: String, day: String, startTime: String, endTime: String, classroom: String?, color: String?) {
+    fun addClass(name: String, day: String, startTime: String, endTime: String, classroom: String?, color: String?, totalStudents: Int) {
         viewModelScope.launch {
             _actionResult.value = Result.Loading
             try {
+                // 09:00 이전 시간 체크 (이중 방어)
+                if (isTimeTooEarly(startTime)) {
+                    _actionResult.value = Result.Error(Exception("수업 시작 시간은 09:00 이후여야 합니다."))
+                    return@launch
+                }
+
                 val currentList = getLocalTimetable().toMutableList()
                 
                 // 새 ID 생성 (가장 큰 ID + 1)
@@ -55,7 +76,8 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
                     startTime = startTime,
                     endTime = endTime,
                     classroom = classroom,
-                    color = color ?: "#FF6B6B" // 기본값 빨강
+                    color = color ?: "#FF6B6B", // 기본값 빨강
+                    totalStudents = totalStudents
                 )
                 
                 currentList.add(newClass)
@@ -69,10 +91,16 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun updateClass(id: Int, name: String, day: String, startTime: String, endTime: String, classroom: String?, color: String?) {
+    fun updateClass(id: Int, name: String, day: String, startTime: String, endTime: String, classroom: String?, color: String?, totalStudents: Int) {
         viewModelScope.launch {
             _actionResult.value = Result.Loading
             try {
+                // 09:00 이전 시간 체크
+                if (isTimeTooEarly(startTime)) {
+                    _actionResult.value = Result.Error(Exception("수업 시작 시간은 09:00 이후여야 합니다."))
+                    return@launch
+                }
+
                 val currentList = getLocalTimetable().toMutableList()
                 val index = currentList.indexOfFirst { it.id == id }
                 
@@ -83,7 +111,8 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
                         startTime = startTime,
                         endTime = endTime,
                         classroom = classroom,
-                        color = color
+                        color = color,
+                        totalStudents = totalStudents
                     )
                     currentList[index] = updatedClass
                     saveLocalTimetable(currentList)
@@ -116,6 +145,18 @@ class TimetableViewModel(application: Application) : AndroidViewModel(applicatio
             } catch (e: Exception) {
                 _actionResult.value = Result.Error(e)
             }
+        }
+    }
+    
+    // 09:00 이전인지 확인하는 헬퍼 함수
+    private fun isTimeTooEarly(timeStr: String): Boolean {
+        return try {
+            val parts = timeStr.split(":")
+            val hour = parts[0].toInt()
+            // 9시보다 작으면(0~8시) true 반환
+            hour < 9
+        } catch (e: Exception) {
+            false
         }
     }
     

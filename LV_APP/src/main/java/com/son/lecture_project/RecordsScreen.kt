@@ -125,7 +125,6 @@ class RecordsScreen : Fragment() {
                     binding.progressBar.visibility = View.GONE
                     allRecords = result.data
                     filterAndShowRecords()
-                    updateStats(allRecords) // Update stats with loaded data
                 }
                 is Result.Error -> {
                     binding.progressBar.visibility = View.GONE
@@ -151,27 +150,47 @@ class RecordsScreen : Fragment() {
             val classAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, filterList)
             classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.spinnerClass.adapter = classAdapter
+
+            // 과목 목록(및 총인원 정보)이 로드되면 화면을 갱신하여 결석 수 등을 업데이트
+            if (allRecords.isNotEmpty()) {
+                filterAndShowRecords()
+            }
         }
     }
     
     private fun updateStats(records: List<Upload>) {
+        val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
+
         if (records.isEmpty()) {
             binding.tvAttendanceRate.text = "-"
             binding.progressAttendance.progress = 0
             binding.tvStatsPresent.text = "0명"
-            binding.tvStatsAbsent.text = "-"
+            binding.tvStatsAbsent.text = "0명" // 결석 수도 초기화
             resetBarChart()
             return
         }
 
+        // 총 측정된 인원(출석 인원)
         val totalPresent = records.sumOf { it.peopleCount }
+        // 평균 출석 인원
         val avgPresent = totalPresent.toDouble() / records.size
+
+        // 결석 수 계산: 각 기록마다 (총원 - 출석)을 더함
+        val totalAbsent = records.sumOf { record ->
+            val courseName = record.originalName
+            val maxStudents = subjectTotalCountMap[courseName] ?: 0
+            if (maxStudents > 0) {
+                (maxStudents - record.peopleCount).coerceAtLeast(0)
+            } else {
+                0
+            }
+        }
         
         binding.tvAttendanceRate.text = String.format(Locale.getDefault(), "%.1f명", avgPresent)
         binding.progressAttendance.progress = 0 
 
         binding.tvStatsPresent.text = "${totalPresent}명"
-        binding.tvStatsAbsent.text = "-" 
+        binding.tvStatsAbsent.text = "${totalAbsent}명" 
 
         val dayCounts = MutableList(5) { 0 }
         val dayUploadCounts = MutableList(5) { 0 }
@@ -354,6 +373,7 @@ class RecordsScreen : Fragment() {
 
     private fun updateRecordList(records: List<Upload>) {
         binding.tvSummary.text = getString(R.string.records_total_count, records.size)
+        val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
 
         if (records.isEmpty()) {
             binding.rvRecords.visibility = View.GONE
@@ -361,7 +381,7 @@ class RecordsScreen : Fragment() {
         } else {
             binding.rvRecords.visibility = View.VISIBLE
             binding.layoutEmpty.visibility = View.GONE
-            recordsAdapter.updateData(records)
+            recordsAdapter.updateData(records, subjectTotalCountMap)
         }
     }
 
