@@ -1,3 +1,4 @@
+import io
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +20,12 @@ async def create_upload(
     idempotency_key: str = None,
     client_id: str = None
 ):
-    stored_name, abs_path = save_file(file, original_name)
+    content = await file.read()
+    file_obj = io.BytesIO(content)
+    file.file.seek(0)
+
+    stored_name, abs_path = save_file(file_obj, original_name)
+
     upload = models.Upload(
         original_name=original_name,
         stored_name=stored_name,
