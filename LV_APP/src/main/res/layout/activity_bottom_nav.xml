@@ -39,15 +39,25 @@
                     android:textColor="@color/white"
                     android:textStyle="bold" />
                 
-                <!-- 티켓 상태 표시등 -->
+                <!-- 토큰 상태 표시등 (동그라미) -->
+                <ImageView
+                    android:id="@+id/img_token_status"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="12dp"
+                    android:src="@drawable/indicator_red"
+                    android:visibility="visible"
+                    tools:src="@drawable/indicator_green" />
+
+                <!-- 티켓 상태 표시등 (네모) -->
                 <ImageView
                     android:id="@+id/img_ticket_status"
                     android:layout_width="12dp"
                     android:layout_height="12dp"
                     android:layout_marginStart="8dp"
-                    android:src="@drawable/indicator_red"
+                    android:src="@drawable/indicator_square_red"
                     android:visibility="visible" 
-                    tools:src="@drawable/indicator_green"/>
+                    tools:src="@drawable/indicator_square_green"/>
             </LinearLayout>
 
         </com.google.android.material.appbar.MaterialToolbar>

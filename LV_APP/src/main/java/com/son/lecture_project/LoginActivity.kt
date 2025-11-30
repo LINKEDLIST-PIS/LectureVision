@@ -59,6 +59,15 @@ class LoginActivity : AppCompatActivity() {
                     // Save the token
                     TokenManager.saveToken(result.data.accessToken)
                     
+                    // 로그인 성공 시 이메일과 비밀번호 저장 (자동 로그인용)
+                    // 주의: 비밀번호를 평문으로 저장하는 것은 보안에 취약합니다.
+                    val email = binding.editLoginEmail.text.toString().trim()
+                    val password = binding.editLoginPassword.text.toString().trim()
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        TokenManager.saveUserEmail(email)
+                        TokenManager.saveUserPassword(password)
+                    }
+                    
                     navigateToMain()
                 }
                 is Result.Error -> {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#4CAF50" /> <!-- Green -->
+    <size android:width="12dp" android:height="12dp" />
+    <corners android:radius="2dp" /> <!-- 약간 둥근 모서리 -->
+</shape>

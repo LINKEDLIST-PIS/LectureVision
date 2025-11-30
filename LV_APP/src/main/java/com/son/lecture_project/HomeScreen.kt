@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.databinding.ScreenHomeBinding
 import com.son.lecture_project.ui.home.HomeViewModel
@@ -47,6 +48,7 @@ class HomeScreen : Fragment() {
         observeMeasurementResult()
         observeHomeData()
         observeTimer()
+        observeComparisonResult() 
         
         Log.d("HomeScreen", "Loading home data...")
         homeViewModel.loadHomeData()
@@ -97,27 +99,61 @@ class HomeScreen : Fragment() {
         }
     }
 
-
-
     private fun observeMeasurementResult() {
-        homeViewModel.measurementResult.observe(viewLifecycleOwner) { result ->
+        // Event Wrapper 적용된 데이터 관찰
+        homeViewModel.measurementResult.observe(viewLifecycleOwner) { event ->
+            // getContentIfNotHandled()를 통해 한 번만 처리
+            val result = event.getContentIfNotHandled() ?: return@observe
+            
             when (result) {
                 is Result.Loading -> binding.progressBar.isVisible = true
                 is Result.Success -> {
                     binding.progressBar.isVisible = false
                     binding.textPresentCount.text = result.data.toString()
-                    binding.textTotalCount.text = "-"
-                    binding.textAbsentCount.text = "-"
+                    
+                    // 성공 시에만 토스트 표시 (중복 방지)
                     Toast.makeText(context, getString(R.string.msg_measurement_complete), Toast.LENGTH_SHORT).show()
                 }
                 is Result.Error -> {
                     binding.progressBar.isVisible = false
-                    binding.textPresentCount.text = "-"
-                    // 태그를 HomeScreen으로 수정하고, 에러 로그 레벨을 조정하거나 메시지를 명확히 함
-                    Log.w("HomeScreen", "Measurement failed (Server might be down): ${result.exception.message}")
+                    Log.w("HomeScreen", "Measurement failed: ${result.exception.message}")
                 }
             }
         }
+    }
+    
+    private fun observeComparisonResult() {
+        homeViewModel.comparisonResult.observe(viewLifecycleOwner) { event ->
+            val result = event.getContentIfNotHandled() ?: return@observe
+            // 비교 결과 팝업 표시
+            showComparisonDialog(result.startCount, result.endCount)
+        }
+    }
+    
+    private fun showComparisonDialog(startCount: Int, endCount: Int) {
+        val totalStudent = 30 
+        val startAbsent = totalStudent - startCount
+        val endAbsent = totalStudent - endCount
+        
+        val message = """
+            <타이머 시작>
+            총인원: $totalStudent
+            인원: $startCount
+            결석: $startAbsent
+            
+                   ⬇
+            
+            <타이머 종료>
+            총인원: $totalStudent
+            인원: $endCount
+            결석: $endAbsent
+        """.trimIndent()
+
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
+            .setTitle("출석 측정 결과")
+            .setMessage(message)
+            .setPositiveButton("확인", null)
+            .show()
     }
     
     private fun observeHomeData() {

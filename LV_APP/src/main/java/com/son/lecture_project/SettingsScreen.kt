@@ -22,6 +22,8 @@ import com.son.lecture_project.ui.home.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
 class SettingsScreen : Fragment() {
 
@@ -175,33 +177,45 @@ class SettingsScreen : Fragment() {
         
         // 모델 서버 URL 저장 및 연결 테스트 버튼
         binding.btnSaveModelUrl.setOnClickListener {
-            val url = binding.etModelServerUrl.text.toString().trim()
-            if (url.isNotEmpty()) {
-                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            val inputUrl = binding.etModelServerUrl.text.toString().trim()
+            if (inputUrl.isNotEmpty()) {
+                if (!inputUrl.startsWith("http://") && !inputUrl.startsWith("https://")) {
                     Toast.makeText(context, "URL은 http:// 또는 https://로 시작해야 합니다.", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
                 
-                // 1. URL 저장 (RetrofitClient가 이 값을 사용하게 됨)
-                TokenManager.setModelServerUrl(url)
-                Toast.makeText(context, "연결 시도 중...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "연결 테스트 중...", Toast.LENGTH_SHORT).show()
                 
-                // 2. 실제 연결 테스트 (Health Check)
+                // 2. 실제 연결 테스트 (Ping 방식: HttpURLConnection 사용)
                 lifecycleScope.launch(Dispatchers.IO) {
+                    var isReachable = false
                     try {
-                        // checkHealth 호출 (GET /)
-                        val response = RetrofitClient.modelApiService.checkHealth()
-                        withContext(Dispatchers.Main) {
-                            // 응답이 성공적이거나, 404라도 서버가 응답했다면 연결은 된 것으로 간주
-                            if (response.isSuccessful || response.code() != 0) {
-                                Toast.makeText(context, "모델 서버에 성공적으로 연결되었습니다!", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "서버 응답 오류: ${response.code()}", Toast.LENGTH_LONG).show()
-                            }
+                        val connection = URL(inputUrl).openConnection() as HttpURLConnection
+                        connection.requestMethod = "GET"
+                        connection.connectTimeout = 3000 // 3초 타임아웃
+                        connection.readTimeout = 3000
+                        
+                        // 연결 시도 (응답 코드가 200이 아니어도 연결 자체는 성공한 것으로 간주할 수 있음)
+                        // 여기서는 응답 코드를 받아오는 것으로 서버 존재 여부 확인
+                        val responseCode = connection.responseCode
+                        Log.d("SettingsScreen", "Ping response code: $responseCode")
+                        
+                        if (responseCode > 0) {
+                            isReachable = true
                         }
+                        connection.disconnect()
                     } catch (e: Exception) {
-                        withContext(Dispatchers.Main) {
-                             Toast.makeText(context, "연결 실패: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        Log.e("SettingsScreen", "Ping failed", e)
+                        isReachable = false
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        if (isReachable) {
+                            // 연결 성공 시에만 URL 저장
+                            TokenManager.setModelServerUrl(inputUrl)
+                            Toast.makeText(context, "모델 서버 연결 성공! URL이 저장되었습니다.", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, "모델 서버 연결 실패. URL을 확인해주세요.", Toast.LENGTH_LONG).show()
                         }
                     }
                 }

@@ -11,6 +11,8 @@ object TokenManager {
     private const val KEY_USER_ID = "user_id"
     private const val KEY_USER_NAME = "user_name"
     private const val KEY_USER_EMAIL = "user_email"
+    private const val KEY_USER_PASSWORD = "user_password" // [추가] 자동 로그인을 위한 비밀번호 저장
+    private const val KEY_IS_LOGGED_IN = "is_logged_in"
     
     // 설정 관련 키
     private const val KEY_DARK_MODE = "dark_mode"
@@ -22,75 +24,56 @@ object TokenManager {
     private const val KEY_DEBUG_MODE = "debug_mode"
     private const val KEY_MODEL_SERVER_URL = "model_server_url"
 
-    // [추가] 앱 버전 관리 키
+    // 앱 버전 관리 키
     private const val KEY_APP_VERSION = "app_version_cache"
 
     private lateinit var prefs: SharedPreferences
 
-    /**
-     * Initializes the TokenManager. This must be called once, typically in the Application class.
-     * @param context The application context.
-     */
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    /**
-     * Saves the authentication token.
-     * @param token The token to save.
-     */
     fun saveToken(token: String) {
         prefs.edit().putString(KEY_TOKEN, token).apply()
+        setLoggedIn(true)
     }
 
-    /**
-     * Retrieves the authentication token.
-     * @return The saved token, or null if it doesn't exist.
-     */
     fun getToken(): String? {
         return prefs.getString(KEY_TOKEN, null)
     }
 
-    /**
-     * Saves the user's ID.
-     */
     fun saveUserId(userId: String) {
         prefs.edit().putString(KEY_USER_ID, userId).apply()
     }
 
-    /**
-     * Retrieves the user's ID.
-     */
     fun getUserId(): String? {
         return prefs.getString(KEY_USER_ID, null)
     }
 
-    /**
-     * Saves the user's name.
-     */
     fun saveUserName(name: String) {
         prefs.edit().putString(KEY_USER_NAME, name).apply()
     }
 
-    /**
-     * Retrieves the user's name.
-     */
     fun getUserName(): String? {
         return prefs.getString(KEY_USER_NAME, null)
     }
 
-    /**
-     * Saves the user's email.
-     */
     fun saveUserEmail(email: String) {
         prefs.edit().putString(KEY_USER_EMAIL, email).apply()
     }
 
-    /**
-     * Retrieves the user's email.
-     */
     fun getUserEmail(): String? {
         return prefs.getString(KEY_USER_EMAIL, null)
+    }
+
+    // [추가] 비밀번호 저장 및 로드 (암호화되지 않은 상태로 저장되므로 보안에 취약할 수 있음 - 주의 필요)
+    // 실제 프로덕션 앱에서는 EncryptedSharedPreferences를 사용해야 합니다.
+    fun saveUserPassword(password: String) {
+        prefs.edit().putString(KEY_USER_PASSWORD, password).apply()
+    }
+
+    fun getUserPassword(): String? {
+        return prefs.getString(KEY_USER_PASSWORD, null)
     }
 
     // --- 설정 관련 메서드 ---
@@ -145,26 +128,29 @@ object TokenManager {
         return prefs.getString(KEY_MODEL_SERVER_URL, null)
     }
 
-    /**
-     * Clears the authentication token and user data, effectively logging the user out.
-     */
     fun clearToken() {
-        prefs.edit().clear().apply()
+        prefs.edit().remove(KEY_TOKEN).apply()
+        setLoggedIn(false)
     }
 
-    // [추가] 저장된 캐시 버전(앱 버전) 가져오기
     fun getSavedAppVersion(): String? {
         return prefs.getString(KEY_APP_VERSION, null)
     }
 
-    // [추가] 현재 앱 버전을 캐시에 저장
     fun saveAppVersion(version: String) {
         prefs.edit().putString(KEY_APP_VERSION, version).apply()
     }
 
-    // [추가] 모든 캐시 데이터 삭제 (로그아웃/초기화 시 사용)
-    // 앱 버전 정보는 지우지 않거나, 초기화 후 바로 다시 저장해야 합니다.
     fun clearAllData() {
         prefs.edit().clear().apply()
+        setLoggedIn(false)
+    }
+
+    fun isLoggedIn(): Boolean {
+        return prefs.getBoolean(KEY_IS_LOGGED_IN, false)
+    }
+
+    fun setLoggedIn(isLoggedIn: Boolean) {
+        prefs.edit().putBoolean(KEY_IS_LOGGED_IN, isLoggedIn).apply()
     }
 }

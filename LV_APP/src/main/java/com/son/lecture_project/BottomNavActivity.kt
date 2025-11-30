@@ -29,6 +29,9 @@ class BottomNavActivity : AppCompatActivity() {
         // [DEBUG] 현재 저장된 토큰 로그 출력
         val token = TokenManager.getToken()
         Log.d("MyToken", "Current Token: $token")
+        
+        // 토큰 상태 표시등 업데이트 (동그라미)
+        updateTokenStatusIndicator()
 
         // 언어 변경 후 액티비티 재생성 시, 바텀 네비게이션 타이틀을 강제로 갱신
         updateBottomNavTitles()
@@ -90,27 +93,38 @@ class BottomNavActivity : AppCompatActivity() {
         binding.bottomNavigation.menu.findItem(R.id.nav_settings)?.title = getString(R.string.nav_settings)
     }
     
+    private fun updateTokenStatusIndicator() {
+        val token = TokenManager.getToken()
+        if (!token.isNullOrEmpty()) {
+            // 토큰 있음: 초록색 동그라미
+            binding.imgTokenStatus.setImageResource(R.drawable.indicator_green)
+        } else {
+            // 토큰 없음: 빨간색 동그라미
+            binding.imgTokenStatus.setImageResource(R.drawable.indicator_red)
+        }
+    }
+    
     private fun observeTicketStatus() {
         homeViewModel.ticketStatus.observe(this) { result ->
             when (result) {
                 is Result.Success -> {
                     val message = result.data
-                    // '유효' 혹은 '보유'라는 단어가 포함되면 발급된 상태로 간주 (초록불)
+                    // '유효' 혹은 '보유'라는 단어가 포함되면 발급된 상태로 간주 (초록색 네모)
                     if (message.contains("유효") || message.contains("보유") || message.contains("발급됨") || message.contains("완료")) {
-                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_green)
+                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_green)
                     } else {
-                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
+                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
                     }
                 }
                 is Result.Error -> {
-                    // 에러 발생 시 빨간불 유지하고 토스트 메시지 표시
-                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
+                    // 에러 발생 시 빨간색 네모 유지하고 토스트 메시지 표시
+                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
                     val errorMsg = result.exception.localizedMessage ?: "알 수 없는 오류"
                     Toast.makeText(this, "티켓/측정 오류: $errorMsg", Toast.LENGTH_LONG).show()
                 }
                 is Result.Loading -> {
-                    // 로딩 중에는 빨간불 (또는 노란불 고려 가능)
-                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_red)
+                    // 로딩 중에는 빨간색 네모
+                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
                 }
             }
         }

@@ -26,8 +26,6 @@ interface MainApiService {
     @POST("/accounts/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    @GET("/accounts/me")
-    suspend fun getMe(@Header("Authorization") token: String): Response<User>
 
     // Ticket
     @POST("/tickets/issue")

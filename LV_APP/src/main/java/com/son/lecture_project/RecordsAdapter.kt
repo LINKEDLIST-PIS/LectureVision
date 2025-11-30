@@ -8,6 +8,7 @@ import com.son.lecture_project.data.model.Upload
 import com.son.lecture_project.databinding.ItemRecordBinding
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 import kotlin.math.abs
 
 class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<RecordsAdapter.RecordViewHolder>() {
@@ -46,11 +47,35 @@ class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<R
         fun bind(record: Upload) {
 
             val formattedDate = try {
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()) 
+                // 1. 서버 시간(UTC) 파싱 설정
+                // Z가 있거나 없을 수 있는 포맷 대응 (보통 ISO 8601)
+                // 여기서는 단순화를 위해 Z를 제거하고 파싱
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                inputFormat.timeZone = TimeZone.getTimeZone("UTC") // 입력은 UTC 기준
+
+                // 2. 출력 시간(KST) 및 요일 설정
                 val outputFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault())
-                val date = inputFormat.parse(record.uploadedAt.replace("Z", ""))
-                date?.let { outputFormat.format(it) } ?: record.uploadedAt
+                outputFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul") // 출력은 한국 시간 기준
+                
+                val dayOfWeekFormat = SimpleDateFormat("E", Locale.KOREAN) // 요일 (월, 화, 수...)
+                dayOfWeekFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
+
+                val dateString = if (record.uploadedAt.contains(".")) {
+                     record.uploadedAt.substring(0, record.uploadedAt.indexOf(".")) // 소수점 이하 제거
+                } else {
+                     record.uploadedAt
+                }
+                val date = inputFormat.parse(dateString.replace("Z", ""))
+
+                if (date != null) {
+                    val dateText = outputFormat.format(date)
+                    val dayOfWeek = dayOfWeekFormat.format(date)
+                    "$dateText ($dayOfWeek)"
+                } else {
+                    record.uploadedAt
+                }
             } catch (e: Exception) {
+                e.printStackTrace()
                 record.uploadedAt
             }
             
@@ -64,9 +89,7 @@ class RecordsAdapter(private var records: List<Upload>) : RecyclerView.Adapter<R
             val color = Color.parseColor(colorPalette[colorIndex])
             binding.cvColor.setCardBackgroundColor(color)
 
-            // 2. 인원 정보 설정 (변경된 레이아웃 반영)
-            // Upload 객체에는 'peopleCount'만 있으므로 이를 총인원(혹은 출석)으로 표시하고,
-            // 결석 정보가 없으므로 임의로 0명 혹은 계산된 값(여기서는 0명)으로 표시
+            // 2. 인원 정보 설정
             binding.tvTotalCount.text = "총인원 : ${record.peopleCount}명"
             binding.tvAbsentCount.text = "결석 : 0명"
         }

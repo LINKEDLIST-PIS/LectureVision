@@ -2,7 +2,6 @@ package com.son.lecture_project.data.api
 
 import com.son.lecture_project.data.model.MeasureResponse
 import retrofit2.Response
-import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -14,11 +13,4 @@ interface ModelApiService {
      */
     @POST("/measure")
     suspend fun measure(@Query("ticket") ticket: String): Response<MeasureResponse>
-
-    /**
-     * Checks if the server is reachable.
-     * Simple GET request to root.
-     */
-    @GET("/")
-    suspend fun checkHealth(): Response<Void>
 }
