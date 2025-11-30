@@ -16,7 +16,7 @@ def get_token():
     resp.raise_for_status()
     data = resp.json()
     config.API_TOKEN = data["access_token"]
-    logging.debug(f"New token issued: {config.API_TOKEN}")
+    logging.info(f"New token issued: {config.API_TOKEN}")
     return config.API_TOKEN
 
 def decode_token(token: str, secret: str = None):
