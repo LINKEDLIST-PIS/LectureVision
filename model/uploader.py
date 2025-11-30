@@ -5,6 +5,7 @@ import uuid
 import cv2
 import requests
 import jwt, time
+import logging
 from . import config
 
 def get_token():
@@ -15,6 +16,7 @@ def get_token():
     resp.raise_for_status()
     data = resp.json()
     config.API_TOKEN = data["access_token"]
+    logging.debug(f"New token issued: {config.API_TOKEN}")
     return config.API_TOKEN
 
 def decode_token(token: str, secret: str = None):
@@ -30,7 +32,7 @@ def ensure_token():
         return get_token()
     return config.API_TOKEN
 
-def upload_image(frame, people_count: int):
+def upload_image(frame, people_count: int, client_id: str):
     success, enc = cv2.imencode(".png", frame)
     if not success:
         raise RuntimeError("Image encoding failed")
