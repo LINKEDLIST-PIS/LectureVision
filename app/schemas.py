@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -10,8 +10,7 @@ class UploadBase(BaseModel):
     uploaded_at: datetime
     client_id: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UploadCreate(BaseModel):
     people_count: int

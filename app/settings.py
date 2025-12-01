@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict   # 추가
 
 class Settings(BaseSettings):
     DB_USER: str
@@ -8,7 +9,6 @@ class Settings(BaseSettings):
     DB_NAME: str
     UPLOAD_DIR: str = "/secure_data"
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(env_file=".env")
 
 settings = Settings()
