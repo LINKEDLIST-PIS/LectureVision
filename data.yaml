@@ -1,0 +1,6 @@
+train: ./datasets/crowdhuman/train/images
+val: ./datasets/crowdhuman/val/images
+test: ./datasets/crowdhuman/test/images
+
+nc: 1
+names: ['person']

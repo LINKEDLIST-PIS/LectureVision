@@ -1,2 +1,10 @@
 app/docker-compose.yml
 model/.env
+/.vs
+Class     Images  Instances     P.txt
+conda list.txt
+(lecturevision) PS CUserscm838lectu.txt
+(lecturevision) PS CUserscm838 cond.txt
+pip list.txt
+yolo val model=runsdetecttrainweigh.txt
+/datasets
