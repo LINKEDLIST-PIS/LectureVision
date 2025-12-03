@@ -1,6 +1,6 @@
-train: ./datasets/crowdhuman/train/images
-val: ./datasets/crowdhuman/val/images
-test: ./datasets/crowdhuman/test/images
+train: ./datasets/roboflow/train/images
+val: ./datasets/roboflow/valid/images
+test: ./datasets/roboflow/test/images
 
 nc: 1
 names: ['person']
