@@ -67,6 +67,7 @@ class HomeScreen : Fragment() {
 
     private fun setupClickListeners() {
         binding.buttonStartTimer.setOnClickListener {
+            // [실제 로직 복구] 타이머 시작/중단 기능 연결
             val isRunning = homeViewModel.isTimerRunning.value ?: false
             if (isRunning) {
                 // 측정 중단: ViewModel의 stopTimer만 호출하면 모든 로직이 처리됨
@@ -149,12 +150,6 @@ class HomeScreen : Fragment() {
         val absentDiffStr = if (absentDiff > 0) "(+${absentDiff})" else if (absentDiff < 0) "(${absentDiff})" else "(-)"
 
         // 2. 메시지 구성 (SpannableString을 사용하여 스타일 적용)
-        // 디자인 요구사항:
-        // 🔔 인원 측정 결과 (제목)
-        // 총 인원 : 30
-        // 출석 시작 27 → 종료 28 (+1) (출석 진하게)
-        // 결석 시작 3 → 종료 2 (-1) (결석 진하게)
-
         val sb = StringBuilder()
         sb.append("총 인원 : $totalDisplay\n\n")
         sb.append("출석   시작 $startCount   →   종료 $endCount $attendDiffStr\n")
@@ -203,6 +198,7 @@ class HomeScreen : Fragment() {
     }
     
     private fun getCurrentClassTotalStudents(): Int {
+        // [실제 로직 복구] 현재 시간표에서 총원 가져오기
         val todayClassesResult = homeViewModel.todayClasses.value
         
         if (todayClassesResult is Result.Success) {
