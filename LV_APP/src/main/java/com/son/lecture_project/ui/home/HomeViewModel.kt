@@ -20,7 +20,6 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
-// 데이터 변경 이벤트를 한 번만 처리하기 위한 Wrapper
 open class Event<out T>(private val content: T) {
     var hasBeenHandled = false
         private set
@@ -33,7 +32,6 @@ open class Event<out T>(private val content: T) {
             content
         }
     }
-
     fun peekContent(): T = content
 }
 
@@ -43,16 +41,13 @@ sealed class Result<out T> {
     object Loading : Result<Nothing>()
 }
 
-// 비교 결과를 전달하기 위한 데이터 클래스
 data class ComparisonResult(
     val startCount: Int,
     val endCount: Int
 )
 
-// AndroidViewModel 상속으로 변경 (Context 사용을 위해)
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Event Wrapper 적용
     private val _measurementResult = MutableLiveData<Event<Result<Int>>>()
     val measurementResult: LiveData<Event<Result<Int>>> = _measurementResult
 
@@ -62,42 +57,32 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _todayClasses = MutableLiveData<Result<List<ClassSchedule>>>()
     val todayClasses: LiveData<Result<List<ClassSchedule>>> = _todayClasses
 
-    // Timer state
     private val _timerText = MutableLiveData<String?>()
     val timerText: LiveData<String?> = _timerText
 
     private val _isTimerRunning = MutableLiveData<Boolean>(false)
     val isTimerRunning: LiveData<Boolean> = _isTimerRunning
 
-    // 비교 결과 알림
     private val _comparisonResult = MutableLiveData<Event<ComparisonResult>>()
     val comparisonResult: LiveData<Event<ComparisonResult>> = _comparisonResult
 
     private var countDownTimer: CountDownTimer? = null
-
-    // 현재 유효한 티켓 ID 저장용
-    private var currentTicketId: String? = null
-    
-    // 시작 시 측정값 저장용
     private var startCount: Int? = null
 
-    // 시간표 로컬 데이터 접근용
     private val gson = Gson()
     private val prefs = application.getSharedPreferences("timetable_prefs", Context.MODE_PRIVATE)
     private val KEY_TIMETABLE = "local_timetable_list"
 
     fun startTimer(minutes: Int) {
-        stopTimer()
-        
-        startCount = null // 초기화
-        
-        val durationInMillis = minutes * 60 * 1000L
+        if (_isTimerRunning.value == true) return
+
         _isTimerRunning.value = true
-        _ticketStatus.value = Result.Success("측정 예약됨 (타이머 동작 중)")
-        
-        // [시작] 타이머 시작 즉시 측정 (isStart = true)
+        startCount = null
+        _ticketStatus.value = Result.Success("초기 측정 시작...")
+
         issueTicketAndMeasure(isStart = true)
-        
+
+        val durationInMillis = minutes * 60 * 1000L
         countDownTimer = object : CountDownTimer(durationInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val totalSeconds = millisUntilFinished / 1000
@@ -109,77 +94,127 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             override fun onFinish() {
                 _timerText.postValue("00:00")
                 stopTimer()
-                
-                // [종료] 타이머 종료 시 측정 (isStart = false)
-                issueTicketAndMeasure(isStart = false)
             }
         }.start()
     }
 
     fun stopTimer() {
+        val wasRunning = _isTimerRunning.value == true
+        
         countDownTimer?.cancel()
         countDownTimer = null
         _isTimerRunning.value = false
         _timerText.value = null
+
+        if (wasRunning && startCount != null) {
+            issueTicketAndMeasure(isStart = false)
+        }
     }
     
-    // 타이머 종료 후 티켓 발급 및 측정 수행 함수
-    fun issueTicketAndMeasure(isStart: Boolean = false) {
+    fun issueTicketAndMeasure(isStart: Boolean) {
+        viewModelScope.launch {
+            withContext(Dispatchers.Main) {
+                _ticketStatus.value = if (isStart) Result.Loading else Result.Success("종료 측정 중...")
+            }
+            
+            try {
+                if (!TokenManager.isTokenValid()) {
+                    throw IllegalStateException("로그인이 필요하거나 토큰이 만료되었습니다.")
+                }
+                val token = TokenManager.getToken()!!
+                
+                Log.d("HomeViewModel", "Requesting ticket...")
+                val createResponse = RetrofitClient.ticketApiService.createTicket("Bearer $token")
+                
+                if (!createResponse.isSuccessful || createResponse.body() == null) {
+                    throw Exception("티켓 발급 오류: ${createResponse.code()}")
+                }
+
+                val ticket = createResponse.body()!!
+                val tId = ticket.ticketId
+                
+                if (tId.isNullOrEmpty()) {
+                    throw Exception("발급된 티켓 ID가 유효하지 않습니다.")
+                }
+                
+                TokenManager.saveTicket(tId)
+                Log.d("HomeViewModel", "Ticket issued. Measuring count...")
+
+                val measureResponse = RetrofitClient.modelApiService.measure(tId)
+                TokenManager.useTicket()
+
+                if (!measureResponse.isSuccessful || measureResponse.body() == null) {
+                    throw Exception("인원 측정 오류: ${measureResponse.code()}")
+                }
+
+                val count = measureResponse.body()!!.peopleCount
+                
+                withContext(Dispatchers.Main) {
+                    _measurementResult.value = Event(Result.Success(count))
+                    
+                    if (isStart) {
+                        startCount = count
+                        _ticketStatus.value = Result.Success("초기 측정 완료 (인원: $count)")
+                        if (_isTimerRunning.value == false) {
+                           return@withContext
+                        }
+                    } else {
+                        val start = startCount ?: 0
+                        _comparisonResult.value = Event(ComparisonResult(start, count))
+                        _ticketStatus.value = Result.Success("최종 측정 완료 (인원: $count)")
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error in issueTicketAndMeasure", e)
+                withContext(Dispatchers.Main) {
+                     if(isStart) {
+                        stopTimer()
+                     }
+                     _ticketStatus.value = Result.Error(e)
+                    _measurementResult.value = Event(Result.Error(e))
+                }
+            }
+        }
+    }
+
+    // New function for testing ticket issuance ONLY
+    fun testTicketIssuance() {
         viewModelScope.launch {
             _ticketStatus.value = Result.Loading
             try {
-                val token = TokenManager.getToken()
-                if (token == null) {
-                    _measurementResult.value = Event(Result.Error(IllegalStateException("로그인이 필요합니다.")))
-                    _ticketStatus.value = Result.Error(Exception("로그인 필요"))
-                    return@launch
+                if (!TokenManager.isTokenValid()) {
+                    throw IllegalStateException("로그인이 필요하거나 토큰이 만료되었습니다.")
                 }
-                
-                // 1. 티켓 발급 요청
-                Log.d("HomeViewModel", "Requesting ticket creation...")
+                val token = TokenManager.getToken()!!
+
+                Log.d("HomeViewModel", "Requesting ticket for testing...")
                 val createResponse = RetrofitClient.ticketApiService.createTicket("Bearer $token")
-                
+
                 if (createResponse.isSuccessful && createResponse.body() != null) {
                     val ticket = createResponse.body()!!
                     val tId = ticket.ticketId
-                    
+
                     if (tId.isNullOrEmpty()) {
-                         _measurementResult.value = Event(Result.Error(Exception("발급된 티켓 ID가 유효하지 않습니다.")))
-                         return@launch
+                        throw Exception("발급된 테스트 티켓 ID가 유효하지 않습니다.")
                     }
+
+                    TokenManager.saveTicket(tId)
                     
-                    currentTicketId = tId
-                    _ticketStatus.value = Result.Success("티켓 발급됨")
-                    
-                    // 2. 발급된 티켓으로 인원 측정 요청
-                    try {
-                        val measureResponse = RetrofitClient.modelApiService.measure(tId)
-                        
-                        if (measureResponse.isSuccessful && measureResponse.body() != null) {
-                            val count = measureResponse.body()!!.peopleCount
-                            
-                            _measurementResult.value = Event(Result.Success(count))
-                            _ticketStatus.value = Result.Success("측정 완료 (인원: $count)")
-                            
-                            if (isStart) {
-                                startCount = count 
-                            } else {
-                                val start = startCount ?: 0 
-                                _comparisonResult.value = Event(ComparisonResult(start, count))
-                            }
-                            
-                        } else {
-                            _measurementResult.value = Event(Result.Error(Exception("인원 측정 오류: ${measureResponse.code()}")))
-                        }
-                    } catch (e: Exception) {
-                        _measurementResult.value = Event(Result.Error(e))
+                    withContext(Dispatchers.Main) {
+                        _ticketStatus.value = Result.Success("테스트 티켓 발급 성공 (5분 유효)")
                     }
-                    
+                    Log.d("HomeViewModel", "Test ticket issued successfully: $tId")
+
                 } else {
-                    _measurementResult.value = Event(Result.Error(Exception("티켓 발급 오류")))
+                    throw Exception("테스트 티켓 발급 오류: ${createResponse.code()}")
                 }
+
             } catch (e: Exception) {
-                _measurementResult.value = Event(Result.Error(e))
+                Log.e("HomeViewModel", "Error in testTicketIssuance", e)
+                withContext(Dispatchers.Main) {
+                    _ticketStatus.value = Result.Error(e)
+                }
             }
         }
     }
@@ -195,9 +230,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val allSchedules = getLocalSchedules()
                 val todayName = getTodayDayName()
                 
-                // 오늘 요일이 포함된 수업만 필터링
-                val todaySchedules = allSchedules.filter { it.day.contains(todayName) }
-                    .sortedBy { it.startTime } // 시작 시간 순 정렬
+                val todaySchedules = allSchedules.filter { it.day.contains(todayName) }.sortedBy { it.startTime } 
                 
                 _todayClasses.value = Result.Success(todaySchedules)
             } catch (e: Exception) {
@@ -223,7 +256,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     private fun getTodayDayName(): String {
-        // 한국 시간(KST) 기준으로 요일 계산
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
         val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
         return when (dayOfWeek) {
@@ -240,6 +272,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
-        stopTimer()
+        countDownTimer?.cancel()
     }
 }

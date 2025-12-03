@@ -18,7 +18,6 @@ import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.databinding.ScreenHomeBinding
 import com.son.lecture_project.ui.home.HomeViewModel
 import com.son.lecture_project.ui.home.Result
-import com.son.lecture_project.ui.ticket.TicketViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -29,9 +28,7 @@ class HomeScreen : Fragment() {
     private var _binding: ScreenHomeBinding? = null
     private val binding get() = _binding!!
 
-
     private val homeViewModel: HomeViewModel by activityViewModels()
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -56,7 +53,6 @@ class HomeScreen : Fragment() {
         homeViewModel.loadHomeData()
     }
 
-    // 화면이 다시 보일 때마다 데이터 갱신 (시간표 변경 반영)
     override fun onResume() {
         super.onResume()
         homeViewModel.loadHomeData()
@@ -73,9 +69,8 @@ class HomeScreen : Fragment() {
         binding.buttonStartTimer.setOnClickListener {
             val isRunning = homeViewModel.isTimerRunning.value ?: false
             if (isRunning) {
-                // 측정 정지
+                // 측정 중단: ViewModel의 stopTimer만 호출하면 모든 로직이 처리됨
                 homeViewModel.stopTimer()
-                Toast.makeText(context, getString(R.string.msg_timer_finished), Toast.LENGTH_SHORT).show()
             } else {
                 // 측정 시작
                 val selectedMinutes = binding.pickerMinutes.value
@@ -85,21 +80,15 @@ class HomeScreen : Fragment() {
     }
     
     private fun observeTimer() {
-        // 타이머 진행 상태 관찰
         homeViewModel.isTimerRunning.observe(viewLifecycleOwner) { isRunning ->
-            if (isRunning) {
-                binding.layoutTimePickerGroup.isVisible = false
-                binding.textTimerDisplay.isVisible = true
-                binding.buttonStartTimer.text = getString(R.string.home_timer_stop_btn)
-            } else {
-                binding.layoutTimePickerGroup.isVisible = true
-                binding.textTimerDisplay.isVisible = false
-                binding.buttonStartTimer.text = getString(R.string.home_timer_start_btn)
-                binding.textTimerDisplay.text = "00:00"
+            binding.layoutTimePickerGroup.isVisible = !isRunning
+            binding.textTimerDisplay.isVisible = isRunning
+            binding.buttonStartTimer.text = if (isRunning) getString(R.string.home_timer_stop_btn) else getString(R.string.home_timer_start_btn)
+            if(!isRunning) {
+                 binding.textTimerDisplay.text = "00:00"
             }
         }
         
-        // 타이머 시간 텍스트 관찰
         homeViewModel.timerText.observe(viewLifecycleOwner) { timeText ->
             if (!timeText.isNullOrEmpty()) {
                 binding.textTimerDisplay.text = timeText
@@ -108,9 +97,7 @@ class HomeScreen : Fragment() {
     }
 
     private fun observeMeasurementResult() {
-        // Event Wrapper 적용된 데이터 관찰
         homeViewModel.measurementResult.observe(viewLifecycleOwner) { event ->
-            // getContentIfNotHandled()를 통해 한 번만 처리
             val result = event.getContentIfNotHandled() ?: return@observe
             
             when (result) {
@@ -120,32 +107,20 @@ class HomeScreen : Fragment() {
                     val currentPeople = result.data
                     binding.textPresentCount.text = "$currentPeople"
                     
-                    // 현재 시간에 맞는 수업의 총 인원 가져오기
                     val totalStudents = getCurrentClassTotalStudents()
                     
                     if (totalStudents > 0) {
                         binding.textTotalCount.text = "$totalStudents"
-                        
-                        // 결석 계산 로직 수정
-                        val absent = totalStudents - currentPeople
-                        if (absent < 0) {
-                            // 현재원이 총원보다 많은 경우
-                            binding.textAbsentCount.text = "-"
-                            Toast.makeText(context, "측정된 인원이 총 인원보다 많습니다.", Toast.LENGTH_LONG).show()
-                        } else {
-                            binding.textAbsentCount.text = "$absent"
-                        }
+                        val absent = (totalStudents - currentPeople).coerceAtLeast(0)
+                        binding.textAbsentCount.text = "$absent"
                     } else {
                         binding.textTotalCount.text = "-"
                         binding.textAbsentCount.text = "-"
                     }
-                    
-                    // 성공 시에만 토스트 표시 (중복 방지)
-                    Toast.makeText(context, getString(R.string.msg_measurement_complete), Toast.LENGTH_SHORT).show()
                 }
                 is Result.Error -> {
                     binding.progressBar.isVisible = false
-                    Log.w("HomeScreen", "Measurement failed: ${result.exception.message}")
+                    Toast.makeText(context, "측정 오류: ${result.exception.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -154,23 +129,16 @@ class HomeScreen : Fragment() {
     private fun observeComparisonResult() {
         homeViewModel.comparisonResult.observe(viewLifecycleOwner) { event ->
             val result = event.getContentIfNotHandled() ?: return@observe
-            // 비교 결과 팝업 표시
             showComparisonDialog(result.startCount, result.endCount)
         }
     }
     
     private fun showComparisonDialog(startCount: Int, endCount: Int) {
-        // 현재 시간에 맞는 수업의 총 인원 가져오기
         val totalStudent = getCurrentClassTotalStudents()
         
-        // 결석 계산 로직 수정 (음수 처리)
-        val startAbsent = if (totalStudent > 0) totalStudent - startCount else 0
-        val endAbsent = if (totalStudent > 0) totalStudent - endCount else 0
-        
-        // 표시 텍스트 설정
         val totalDisplay = if (totalStudent > 0) "$totalStudent" else "-"
-        val startAbsentDisplay = if (totalStudent > 0 && startAbsent >= 0) "$startAbsent" else "-"
-        val endAbsentDisplay = if (totalStudent > 0 && endAbsent >= 0) "$endAbsent" else "-"
+        val startAbsentDisplay = if (totalStudent > 0) (totalStudent - startCount).coerceAtLeast(0).toString() else "-"
+        val endAbsentDisplay = if (totalStudent > 0) (totalStudent - endCount).coerceAtLeast(0).toString() else "-"
         
         val message = """
             <타이머 시작>
@@ -186,11 +154,6 @@ class HomeScreen : Fragment() {
             결석: $endAbsentDisplay
         """.trimIndent()
         
-        // 음수 발생 시 경고 메시지 추가
-        if ((totalStudent > 0) && (startAbsent < 0 || endAbsent < 0)) {
-            Toast.makeText(context, "측정된 인원이 총 인원보다 많습니다.", Toast.LENGTH_LONG).show()
-        }
-
         MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
             .setTitle("출석 측정 결과")
             .setMessage(message)
@@ -198,41 +161,28 @@ class HomeScreen : Fragment() {
             .show()
     }
     
-    // 현재 시간(KST) 기준 진행 중인 수업의 총 인원수 반환
     private fun getCurrentClassTotalStudents(): Int {
         val todayClassesResult = homeViewModel.todayClasses.value
         
         if (todayClassesResult is Result.Success) {
             val schedules = todayClassesResult.data
             val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
-            val currentHour = cal.get(Calendar.HOUR_OF_DAY)
-            val currentMinute = cal.get(Calendar.MINUTE)
-            val currentTimeInMinutes = currentHour * 60 + currentMinute
+            val currentTimeInMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
             
-            // 현재 시간이 수업 시간 범위 내에 있는 수업 찾기
             val currentClass = schedules.find { schedule ->
                 val start = parseTimeToMinutes(schedule.startTime)
                 val end = parseTimeToMinutes(schedule.endTime)
-                
-                if (start != -1 && end != -1) {
-                    currentTimeInMinutes in start..end
-                } else {
-                    false
-                }
+                if (start != -1 && end != -1) currentTimeInMinutes in start..end else false
             }
-            
             return currentClass?.totalStudents ?: 0
         }
-        
         return 0
     }
     
     private fun parseTimeToMinutes(timeStr: String): Int {
         return try {
             val parts = timeStr.split(":")
-            val h = parts[0].toInt()
-            val m = if (parts.size > 1) parts[1].toInt() else 0
-            h * 60 + m
+            parts[0].toInt() * 60 + (parts.getOrNull(1)?.toInt() ?: 0)
         } catch (e: Exception) {
             -1
         }
@@ -255,10 +205,7 @@ class HomeScreen : Fragment() {
     }
 
     private fun updateTodayScheduleUI(todayClasses: List<ClassSchedule>) {
-        // 1. 날짜 및 요일 표시 (한국 시간 기준)
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
-        
-        // 날짜 포맷팅 (예: 11/25 월)
         val dateFormat = SimpleDateFormat("MM/dd E", Locale.KOREAN)
         dateFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
         val dateText = dateFormat.format(calendar.time)
@@ -266,7 +213,6 @@ class HomeScreen : Fragment() {
         binding.textTodayScheduleTitle.text = getString(R.string.format_today_schedule, dateText)
         binding.textTodayScheduleTitle.isVisible = true
         
-        // 2. 시간표 목록 업데이트
         binding.layoutScheduleItems.removeAllViews()
 
         if (todayClasses.isEmpty()) {
@@ -279,16 +225,12 @@ class HomeScreen : Fragment() {
 
             todayClasses.forEach { classItem ->
                 val textView = TextView(context).apply {
-                    // 시간표 항목에 총 인원 정보도 표시 (선택 사항)
                     val totalInfo = if (classItem.totalStudents > 0) " (총 ${classItem.totalStudents}명)" else ""
                     text = "${classItem.name} (${classItem.startTime}~${classItem.endTime})$totalInfo"
                     textSize = 16f
-                    setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                    setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
                     setPadding(0, 8, 0, 8)
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                    )
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
                 binding.layoutScheduleItems.addView(textView)
             }
@@ -297,7 +239,6 @@ class HomeScreen : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-
         _binding = null
     }
 }

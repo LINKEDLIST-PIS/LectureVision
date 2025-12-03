@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Lecture Vision</string>
+    <string name="app_name">LectureVision</string>
     
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>

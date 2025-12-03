@@ -20,8 +20,8 @@ android {
 
     buildFeatures {
         viewBinding = true
-        dataBinding = true 
-        compose = true 
+        dataBinding = true
+        compose = true
     }
 
     buildTypes {
@@ -34,22 +34,18 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17)
     }
 }
 
 dependencies {
 
+    implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
-    implementation(libs.material) 
+    implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation("androidx.fragment:fragment-ktx:1.7.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
