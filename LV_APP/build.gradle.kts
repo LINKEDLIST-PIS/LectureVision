@@ -57,7 +57,12 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
+    // Testing Dependencies
     testImplementation(libs.junit)
+    testImplementation("androidx.arch.core:core-testing:2.2.0") // For InstantTaskExecutorRule
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // For runTest
+    testImplementation("io.mockk:mockk:1.13.8") // For Mocking
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
