@@ -2,8 +2,9 @@ package com.son.lecture_project
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
-import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -14,51 +15,85 @@ import androidx.fragment.app.Fragment
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.databinding.ActivityBottomNavBinding
 import com.son.lecture_project.ui.home.HomeViewModel
-import com.son.lecture_project.ui.home.Result
 
 class BottomNavActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBottomNavBinding
     private val homeViewModel: HomeViewModel by viewModels()
 
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var statusCheckRunnable: Runnable
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityBottomNavBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
-        // [DEBUG] 현재 저장된 토큰 로그 출력
-        val token = TokenManager.getToken()
-        Log.d("MyToken", "Current Token: $token")
-        
-        // 토큰 상태 표시등 업데이트 (동그라미)
-        updateTokenStatusIndicator()
 
-        // 언어 변경 후 액티비티 재생성 시, 바텀 네비게이션 타이틀을 강제로 갱신
+        // 초기 UI 상태 설정
+        updateAllIndicators()
         updateBottomNavTitles()
+        refreshTicketIndicatorVisibility()
 
         if (savedInstanceState == null) {
             replaceFragment(HomeScreen())
         }
-        
-        // 티켓 상태 관찰 시작
-        observeTicketStatus()
-        
-        // 초기 상태 확인 로직 제거 (티켓은 타이머 종료 시 발급됨)
-        // homeViewModel.checkTicketStatus() <- 삭제됨
 
-        // 티켓 표시등 가시성 초기화
-        refreshTicketIndicatorVisibility()
+        // 상단바 메뉴 설정
+        setupTopAppBar()
 
-        // 상단바 메뉴 설정 (커스텀 레이아웃 클릭 리스너 처리)
+        // 하단 네비게이션 리스너 설정
+        setupBottomNavigation()
+    }
+
+    private fun setupStatusCheckRunnable() {
+        statusCheckRunnable = Runnable {
+            updateAllIndicators()
+            handler.postDelayed(statusCheckRunnable, 1000) // 1초마다 반복
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setupStatusCheckRunnable()
+        handler.post(statusCheckRunnable) // 주기적 상태 확인 시작
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(statusCheckRunnable) // 화면 벗어나면 중지
+    }
+
+    private fun updateAllIndicators() {
+        // 토큰 상태 업데이트
+        if (TokenManager.isTokenValid()) {
+            binding.imgTokenStatus.setImageResource(R.drawable.indicator_green)
+        } else {
+            binding.imgTokenStatus.setImageResource(R.drawable.indicator_red)
+        }
+
+        // 티켓 상태 업데이트
+        if (TokenManager.isTicketValid()) {
+            binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_green)
+        } else {
+            binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
+        }
+    }
+
+    private fun updateBottomNavTitles() {
+        binding.bottomNavigation.menu.findItem(R.id.nav_home)?.title = getString(R.string.nav_home)
+        binding.bottomNavigation.menu.findItem(R.id.nav_timetable)?.title = getString(R.string.nav_timetable)
+        binding.bottomNavigation.menu.findItem(R.id.nav_records)?.title = getString(R.string.nav_records)
+        binding.bottomNavigation.menu.findItem(R.id.nav_settings)?.title = getString(R.string.nav_settings)
+    }
+
+    private fun setupTopAppBar() {
         val menuItem = binding.topAppBar.menu.findItem(R.id.action_notifications)
         val actionView = menuItem.actionView as FrameLayout?
 
-        actionView?.let { layout ->
-            layout.setOnClickListener {
-                startActivity(Intent(this, NotificationActivity::class.java))
-            }
-            updateBadgeCount(layout, 0)
+        actionView?.setOnClickListener {
+            startActivity(Intent(this, NotificationActivity::class.java))
         }
+        updateBadgeCount(actionView, 0) // 초기 뱃지 카운트
 
         binding.topAppBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -69,10 +104,10 @@ class BottomNavActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
 
+    private fun setupBottomNavigation() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
-            Log.d("BottomNav", "Selected Item: ${item.itemId}")
-
             val selectedFragment: Fragment = when (item.itemId) {
                 R.id.nav_home -> HomeScreen()
                 R.id.nav_timetable -> TimetableScreen()
@@ -80,64 +115,18 @@ class BottomNavActivity : AppCompatActivity() {
                 R.id.nav_settings -> SettingsScreen()
                 else -> HomeScreen()
             }
-
             replaceFragment(selectedFragment)
             true
         }
     }
 
-    private fun updateBottomNavTitles() {
-        binding.bottomNavigation.menu.findItem(R.id.nav_home)?.title = getString(R.string.nav_home)
-        binding.bottomNavigation.menu.findItem(R.id.nav_timetable)?.title = getString(R.string.nav_timetable)
-        binding.bottomNavigation.menu.findItem(R.id.nav_records)?.title = getString(R.string.nav_records)
-        binding.bottomNavigation.menu.findItem(R.id.nav_settings)?.title = getString(R.string.nav_settings)
-    }
-    
-    private fun updateTokenStatusIndicator() {
-        val token = TokenManager.getToken()
-        if (!token.isNullOrEmpty()) {
-            // 토큰 있음: 초록색 동그라미
-            binding.imgTokenStatus.setImageResource(R.drawable.indicator_green)
-        } else {
-            // 토큰 없음: 빨간색 동그라미
-            binding.imgTokenStatus.setImageResource(R.drawable.indicator_red)
-        }
-    }
-    
-    private fun observeTicketStatus() {
-        homeViewModel.ticketStatus.observe(this) { result ->
-            when (result) {
-                is Result.Success -> {
-                    val message = result.data
-                    // '유효' 혹은 '보유'라는 단어가 포함되면 발급된 상태로 간주 (초록색 네모)
-                    if (message.contains("유효") || message.contains("보유") || message.contains("발급됨") || message.contains("완료")) {
-                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_green)
-                    } else {
-                        binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
-                    }
-                }
-                is Result.Error -> {
-                    // 에러 발생 시 빨간색 네모 유지하고 토스트 메시지 표시
-                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
-                    val errorMsg = result.exception.localizedMessage ?: "알 수 없는 오류"
-                    Toast.makeText(this, "티켓/측정 오류: $errorMsg", Toast.LENGTH_LONG).show()
-                }
-                is Result.Loading -> {
-                    // 로딩 중에는 빨간색 네모
-                    binding.imgTicketStatus.setImageResource(R.drawable.indicator_square_red)
-                }
-            }
-        }
-    }
-
-    // 외부(SettingsScreen)에서 호출 가능하도록 public으로 선언
     fun refreshTicketIndicatorVisibility() {
         val isVisible = TokenManager.isTicketIndicatorVisible()
         binding.imgTicketStatus.visibility = if (isVisible) View.VISIBLE else View.GONE
     }
 
-    fun updateBadgeCount(layout: View, count: Int) {
-        val badge = layout.findViewById<TextView>(R.id.tv_notification_badge) ?: return
+    fun updateBadgeCount(layout: View?, count: Int) {
+        val badge = layout?.findViewById<TextView>(R.id.tv_notification_badge) ?: return
         if (count > 0) {
             badge.text = count.toString()
             badge.visibility = View.VISIBLE
@@ -147,7 +136,6 @@ class BottomNavActivity : AppCompatActivity() {
     }
 
     private fun replaceFragment(fragment: Fragment) {
-        Log.d("BottomNav", "Replacing fragment with ${fragment::class.java.simpleName}")
         try {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)

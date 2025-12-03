@@ -9,7 +9,7 @@
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:strokeWidth="1dp"
-    app:strokeColor="#E2E8F0"
+    app:strokeColor="?attr/colorOutline"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">
@@ -17,8 +17,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:background="@android:color/white">
+        android:padding="16dp">
 
         <!-- 왼쪽 색상 표시 (과목 색상) -->
         <com.google.android.material.card.MaterialCardView
@@ -49,7 +48,7 @@
                 android:id="@+id/tv_course_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#1E293B"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:ellipsize="end"
@@ -61,7 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="#64748B"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="13sp"
                 tools:text="2023.10.27 14:00" />
         </LinearLayout>
@@ -83,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:text="총인원 : -명"
                 android:textSize="12sp"
-                android:textColor="@color/text_secondary"
+                android:textColor="?android:attr/textColorSecondary"
                 tools:text="총인원 : 25명" />
 
             <TextView

@@ -20,8 +20,8 @@ android {
 
     buildFeatures {
         viewBinding = true
-        dataBinding = true 
-        compose = true 
+        dataBinding = true
+        compose = true
     }
 
     buildTypes {
@@ -34,22 +34,18 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        jvmToolchain(17)
     }
 }
 
 dependencies {
 
+    implementation(libs.kotlin.stdlib)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
-    implementation(libs.material) 
+    implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation("androidx.fragment:fragment-ktx:1.7.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
@@ -57,12 +53,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    // Testing Dependencies
     testImplementation(libs.junit)
-    testImplementation("androidx.arch.core:core-testing:2.2.0") // For InstantTaskExecutorRule
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // For runTest
-    testImplementation("io.mockk:mockk:1.13.8") // For Mocking
-
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 

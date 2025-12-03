@@ -1,6 +1,7 @@
 package com.son.lecture_project
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -30,7 +31,6 @@ class SettingsScreen : Fragment() {
     private var _binding: ScreenSettingsBinding? = null
     private val binding get() = _binding!!
     
-    // Ticket 발급 로직 재사용을 위해 HomeViewModel 사용 (activityViewModels로 공유)
     private val homeViewModel: HomeViewModel by activityViewModels()
 
     override fun onCreateView(
@@ -71,111 +71,79 @@ class SettingsScreen : Fragment() {
     }
 
     private fun loadSettings() {
-        // 다크 모드 설정 로드
-        val isDarkMode = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES
-        binding.switchDarkMode.isChecked = isDarkMode
-
-        // 알림 설정 로드
-        val areNotificationsEnabled = TokenManager.areNotificationsEnabled()
-        binding.switchNotifications.isChecked = areNotificationsEnabled
+        binding.switchDarkMode.isChecked = TokenManager.isDarkMode()
+        binding.switchNotifications.isChecked = TokenManager.areNotificationsEnabled()
+        binding.switchTicketIndicator.isChecked = TokenManager.isTicketIndicatorVisible()
         
-        // 티켓 상태 표시 설정 로드
-        val isTicketIndicatorVisible = TokenManager.isTicketIndicatorVisible()
-        binding.switchTicketIndicator.isChecked = isTicketIndicatorVisible
-        
-        // 디버그 모드 설정 로드
         val isDebugMode = TokenManager.isDebugMode()
         binding.switchDebugMode.isChecked = isDebugMode
         binding.layoutModelUrl.visibility = if (isDebugMode) View.VISIBLE else View.GONE
         
-        // 모델 서버 URL 로드
         val savedUrl = TokenManager.getModelServerUrl()
         if (!savedUrl.isNullOrEmpty()) {
             binding.etModelServerUrl.setText(savedUrl)
         }
         
-        // 현재 토큰 상태 표시
         updateTokenStatusUI()
         
-        // 현재 언어 설정에 따라 텍스트 업데이트
         val currentLocale = AppCompatDelegate.getApplicationLocales()[0]
         val langCode = currentLocale?.language ?: TokenManager.getLanguage()
-        
         binding.tvCurrentLanguage.text = if (langCode == "en") getString(R.string.current_lang_en) else getString(R.string.current_lang_ko)
     }
     
     private fun updateTokenStatusUI() {
+        if (!TokenManager.isTokenValid()) {
+             binding.tvTokenStatus.text = "토큰 없음 (만료)"
+             return
+        }
         val token = TokenManager.getToken()
         if (token.isNullOrEmpty()) {
              binding.tvTokenStatus.text = "토큰 없음"
         } else {
-             // 토큰의 앞 10자리와 끝 5자리만 보여줌
-             val maskedToken = if (token.length > 15) {
-                 "${token.substring(0, 10)}...${token.substring(token.length - 5)}"
-             } else {
-                 token
-             }
+             val maskedToken = if (token.length > 15) "${token.substring(0, 10)}...${token.substring(token.length - 5)}" else token
              binding.tvTokenStatus.text = "보유 중 ($maskedToken)"
         }
     }
 
     private fun setupClickListeners() {
-        // 다크 모드 설정 스위치
         binding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                Toast.makeText(context, getString(R.string.msg_dark_mode_on), Toast.LENGTH_SHORT).show()
-            } else {
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                Toast.makeText(context, getString(R.string.msg_dark_mode_off), Toast.LENGTH_SHORT).show()
-            }
-            // 필요 시 SharedPreferences 등에 상태 저장 (앱 재실행 시 유지하려면)
+            TokenManager.setDarkMode(isChecked)
+            val mode = if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            AppCompatDelegate.setDefaultNightMode(mode)
         }
 
-        // 언어 변경
         binding.layoutLanguage.setOnClickListener {
             showLanguageDialog()
         }
         
-        // 개인정보처리방침 (WebViewActivity로 이동)
         binding.btnPrivacyPolicy.setOnClickListener {
              val intent = Intent(requireContext(), WebViewActivity::class.java)
-             intent.putExtra("URL", "https://app-privacy-policy-generator.nisrulz.com/") // 임시 URL
+             intent.putExtra("URL", "https://app-privacy-policy-generator.nisrulz.com/")
              intent.putExtra("TITLE", "개인정보처리방침")
              startActivity(intent)
         }
         
-        // 서비스 이용약관 (WebViewActivity로 이동)
         binding.btnTermsOfService.setOnClickListener {
              val intent = Intent(requireContext(), WebViewActivity::class.java)
-             intent.putExtra("URL", "https://termly.io/resources/templates/") // 임시 URL
+             intent.putExtra("URL", "https://termly.io/resources/templates/")
              intent.putExtra("TITLE", "서비스 이용약관")
              startActivity(intent)
         }
 
-        // 알림 설정 스위치
         binding.switchNotifications.setOnCheckedChangeListener { _, isChecked ->
             TokenManager.setNotificationsEnabled(isChecked)
-            val message = if (isChecked) getString(R.string.msg_noti_on) else getString(R.string.msg_noti_off)
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
         
-        // 티켓 상태 표시 스위치
         binding.switchTicketIndicator.setOnCheckedChangeListener { _, isChecked ->
             TokenManager.setTicketIndicatorVisible(isChecked)
             (activity as? BottomNavActivity)?.refreshTicketIndicatorVisibility()
         }
         
-        // 디버그 모드 스위치
         binding.switchDebugMode.setOnCheckedChangeListener { _, isChecked ->
             TokenManager.setDebugMode(isChecked)
             binding.layoutModelUrl.visibility = if (isChecked) View.VISIBLE else View.GONE
-            if (isChecked) {
-                updateTokenStatusUI()
-            }
         }
         
-        // 모델 서버 URL 저장 및 연결 테스트 버튼
         binding.btnSaveModelUrl.setOnClickListener {
             val inputUrl = binding.etModelServerUrl.text.toString().trim()
             if (inputUrl.isNotEmpty()) {
@@ -186,35 +154,24 @@ class SettingsScreen : Fragment() {
                 
                 Toast.makeText(context, "연결 테스트 중...", Toast.LENGTH_SHORT).show()
                 
-                // 2. 실제 연결 테스트 (Ping 방식: HttpURLConnection 사용)
                 lifecycleScope.launch(Dispatchers.IO) {
-                    var isReachable = false
                     try {
                         val connection = URL(inputUrl).openConnection() as HttpURLConnection
                         connection.requestMethod = "GET"
-                        connection.connectTimeout = 3000 // 3초 타임아웃
+                        connection.connectTimeout = 3000
                         connection.readTimeout = 3000
-                        
-                        // 연결 시도 (응답 코드가 200이 아니어도 연결 자체는 성공한 것으로 간주할 수 있음)
-                        // 여기서는 응답 코드를 받아오는 것으로 서버 존재 여부 확인
                         val responseCode = connection.responseCode
-                        Log.d("SettingsScreen", "Ping response code: $responseCode")
-                        
                         if (responseCode > 0) {
-                            isReachable = true
+                             withContext(Dispatchers.Main) {
+                                TokenManager.setModelServerUrl(inputUrl)
+                                Toast.makeText(context, "모델 서버 연결 성공! URL이 저장되었습니다.", Toast.LENGTH_LONG).show()
+                             }
+                        } else {
+                            throw Exception("Connection failed with code $responseCode")
                         }
                         connection.disconnect()
                     } catch (e: Exception) {
-                        Log.e("SettingsScreen", "Ping failed", e)
-                        isReachable = false
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        if (isReachable) {
-                            // 연결 성공 시에만 URL 저장
-                            TokenManager.setModelServerUrl(inputUrl)
-                            Toast.makeText(context, "모델 서버 연결 성공! URL이 저장되었습니다.", Toast.LENGTH_LONG).show()
-                        } else {
+                        withContext(Dispatchers.Main) {
                             Toast.makeText(context, "모델 서버 연결 실패. URL을 확인해주세요.", Toast.LENGTH_LONG).show()
                         }
                     }
@@ -224,10 +181,9 @@ class SettingsScreen : Fragment() {
             }
         }
         
-        // 티켓 수동 발급 버튼 (테스트용)
+        // 티켓 수동 발급 버튼
         binding.btnManualTicket.setOnClickListener {
-            Toast.makeText(context, "티켓 발급 및 측정을 시도합니다...", Toast.LENGTH_SHORT).show()
-            homeViewModel.issueTicketAndMeasure()
+            homeViewModel.testTicketIssuance()
         }
 
         // 로그아웃
@@ -238,21 +194,12 @@ class SettingsScreen : Fragment() {
     
     private fun observeTicketStatus() {
         homeViewModel.ticketStatus.observe(viewLifecycleOwner) { result ->
-            // Settings 화면이 visible일 때만 Toast 등을 띄우거나 UI 업데이트
-            // 여기서는 로그만 찍거나 간단한 토스트 처리 (HomeViewModel에서 이미 처리된 상태가 올 수 있음)
-            if (binding.layoutModelUrl.visibility == View.VISIBLE) {
-                when (result) {
-                    is Result.Success -> {
-                        // 필요시 여기에 추가적인 UI 피드백
-                        Log.d("SettingsScreen", "Ticket Status: ${result.data}")
-                    }
-                    is Result.Error -> {
-                        Log.e("SettingsScreen", "Ticket Error: ${result.exception.message}")
-                    }
-                    is Result.Loading -> {
-                        
-                    }
-                }
+            if (view?.isShown == false) return@observe
+            
+            when (result) {
+                is Result.Success -> Toast.makeText(context, "티켓 상태: ${result.data}", Toast.LENGTH_SHORT).show()
+                is Result.Error -> Toast.makeText(context, "티켓 오류: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+                is Result.Loading -> {}
             }
         }
     }
@@ -268,15 +215,10 @@ class SettingsScreen : Fragment() {
             .setTitle(getString(R.string.dialog_lang_title))
             .setSingleChoiceItems(languages, checkedItem) { dialog, which ->
                 val langCode = if (which == 0) "ko" else "en"
-                
-                // 언어 코드만 변경하고 다크모드 상태는 유지하도록 주의
                 if (currentLang != langCode) {
                     TokenManager.setLanguage(langCode)
                     dialog.dismiss()
-
-                    val localeList = LocaleListCompat.forLanguageTags(langCode)
-                    AppCompatDelegate.setApplicationLocales(localeList)
-
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(langCode))
                 } else {
                     dialog.dismiss()
                 }
@@ -290,13 +232,12 @@ class SettingsScreen : Fragment() {
             .setTitle(getString(R.string.dialog_logout_title))
             .setMessage(getString(R.string.dialog_logout_message))
             .setPositiveButton(getString(R.string.action_logout)) { _, _ ->
-                TokenManager.clearToken()
+                TokenManager.clearAllData()
 
                 val intent = Intent(requireActivity(), LoginActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
                 startActivity(intent)
-                Toast.makeText(context, getString(R.string.action_logout) + "...", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton(getString(R.string.btn_cancel), null)
             .show()

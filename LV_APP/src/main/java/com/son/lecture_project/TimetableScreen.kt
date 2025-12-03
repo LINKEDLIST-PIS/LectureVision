@@ -245,6 +245,11 @@ class TimetableScreen : Fragment() {
                     return@setPositiveButton
                 }
 
+                if (parseTimeToMinutes(endTimeStr) <= parseTimeToMinutes(startTimeStr)) {
+                    Toast.makeText(context, "종료 시간은 시작 시간보다 늦어야 합니다.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
                 // 09:00 이전 시간 입력 제한
                 if (isTimeTooEarly(startTimeStr)) {
                     Toast.makeText(context, "수업 시작 시간은 09:00 이후여야 합니다.", Toast.LENGTH_SHORT).show()
@@ -346,6 +351,11 @@ class TimetableScreen : Fragment() {
                 // 시간 유효성 검사
                 if (!isValidTimeFormat(startTimeStr) || !isValidTimeFormat(endTimeStr)) {
                     Toast.makeText(context, "시간 형식이 올바르지 않습니다. (HH:mm)", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                if (parseTimeToMinutes(endTimeStr) <= parseTimeToMinutes(startTimeStr)) {
+                    Toast.makeText(context, "종료 시간은 시작 시간보다 늦어야 합니다.", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 

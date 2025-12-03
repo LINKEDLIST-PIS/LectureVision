@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">cm838.myasustor.com</domain>
+        <domain>192.168.0.15</domain>
+        <domain>192.168.50.50</domain>
     </domain-config>
 </network-security-config>

@@ -9,22 +9,25 @@
     android:padding="16dp"
     android:fitsSystemWindows="true">
 
+    <!-- 상단 헤더 부분 (위치 조정됨) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="12dp"
         android:layout_marginBottom="16dp">
 
         <ImageView
             android:id="@+id/btn_back"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_arrow_back_24"
-            app:tint="@color/text_primary"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:focusable="true"/>
+            android:focusable="true"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="@color/text_primary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -36,6 +39,7 @@
             android:layout_marginStart="16dp" />
     </LinearLayout>
 
+    <!-- 알림 목록 내용 -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
