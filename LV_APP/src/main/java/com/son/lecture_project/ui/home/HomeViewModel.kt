@@ -13,6 +13,7 @@ import com.google.gson.reflect.TypeToken
 import com.son.lecture_project.data.api.RetrofitClient
 import com.son.lecture_project.data.local.TokenManager
 import com.son.lecture_project.data.model.ClassSchedule
+import com.son.lecture_project.service.AlarmScheduler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -228,8 +229,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _todayClasses.value = Result.Loading
             try {
                 val allSchedules = getLocalSchedules()
-                val todayName = getTodayDayName()
                 
+                // 시간표 로드 시 알람 스케줄링도 함께 수행
+                if (allSchedules.isNotEmpty()) {
+                    AlarmScheduler.scheduleClassAlarms(getApplication(), allSchedules)
+                }
+                
+                val todayName = getTodayDayName()
                 val todaySchedules = allSchedules.filter { it.day.contains(todayName) }.sortedBy { it.startTime } 
                 
                 _todayClasses.value = Result.Success(todaySchedules)

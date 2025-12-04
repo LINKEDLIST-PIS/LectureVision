@@ -58,7 +58,7 @@
     <string name="msg_terms_preparing">서비스 이용약관을 준비 중입니다.</string>
     
     <string name="msg_model_url_saved">모델 서버 주소가 저장되었습니다.</string>
-    <string name="msg_connecting">연결 시도 중...</string>
+    <string name="msg_connecting">연결 시도 중…</string>
     <string name="msg_connected">모델 서버에 성공적으로 연결되었습니다!</string>
     <string name="msg_connection_failed">연결 실패: %s</string>
     <string name="msg_invalid_url">URL은 http:// 또는 https://로 시작해야 합니다.</string>
@@ -70,7 +70,7 @@
     <string name="home_no_notice">등록된 공지사항이 없습니다.</string>
     <string name="home_notice_error">공지사항을 불러올 수 없습니다.</string>
     <string name="home_ticket_status_title">🎟️ 내 티켓 상태</string>
-    <string name="home_ticket_checking">확인 중...</string>
+    <string name="home_ticket_checking">확인 중…</string>
     <string name="home_issue_ticket_btn">티켓 발급하기</string>
     <string name="home_current_people">현재 인원</string>
     <string name="home_total_people">총 인원</string>
@@ -79,7 +79,9 @@
     <string name="home_timer_setting">수업 시간 설정</string>
     <string name="home_timer_start_btn">측정 시작</string>
     <string name="home_timer_stop_btn">측정 정지</string>
+    <string name="home_timer_default_time">00:00</string>
     <string name="home_today_schedule_title">📅 오늘의 시간표</string>
+    <string name="format_today_schedule">오늘의 시간표 (%s)</string>
     <string name="home_no_schedule">오늘은 예정된 수업이 없습니다.</string>
 
     <!-- Timetable Screen -->
@@ -94,12 +96,23 @@
     <string name="records_tab_stats">통계</string>
     <string name="records_filter_all_subjects">전체 과목</string>
     <string name="records_filter_all_period">전체 기간</string>
+    <string name="records_filter_recent_1">최근 1일</string>
     <string name="records_filter_recent_7">최근 7일</string>
     <string name="records_filter_recent_30">최근 30일</string>
     <string name="records_reset_filter">초기화</string>
     <string name="records_search">조회</string>
     <string name="records_total_count">총 %d개의 기록</string>
     <string name="records_empty">기록이 없습니다.</string>
+    <string name="record_item_present">출석 : %d명</string>
+    <string name="record_item_absent">결석 : %s명</string>
+    
+    <!-- Statistics -->
+    <string name="stats_attendance_rate">출석률</string>
+    <string name="stats_absence_rate">결석률</string>
+    <string name="stats_top3_absent">결석률 높은 과목 TOP 3</string>
+    <string name="stats_week_chart_title">요일별 출석/결석 현황</string>
+    <string name="stats_chart_legend_present">출석</string>
+    <string name="stats_chart_legend_absent">결석</string>
 
     <!-- Navigation -->
     <string name="nav_home">홈</string>
@@ -122,9 +135,9 @@
     <string name="dialog_class_edit_btn">수정</string>
     <string name="dialog_class_cancel_btn">취소</string>
     <string name="msg_enter_class_name">수업명을 입력해주세요.</string>
-    <string name="msg_class_added">수업이 추가되었습니다 (로컬)</string>
-    <string name="msg_class_updated">수업이 수정되었습니다 (로컬)</string>
-    <string name="msg_class_deleted">\'%s\' 수업이 삭제되었습니다 (로컬)</string>
+    <string name="msg_class_added">수업이 추가되었습니다.</string>
+    <string name="msg_class_updated">수업이 수정되었습니다.</string>
+    <string name="msg_class_deleted">\'%s\' 수업이 삭제되었습니다.</string>
     <string name="msg_class_not_found">수업을 찾을 수 없습니다.</string>
     <string name="dialog_manage_title">\'%s\' 관리</string>
     <string name="dialog_option_edit">수정</string>
@@ -133,18 +146,23 @@
 
     <!-- Messages & Formats -->
     <string name="msg_filter_reset">필터가 초기화되었습니다.</string>
-    <string name="msg_searching">기록을 조회합니다.</string>
+    <string name="msg_searching">기록을 조회합니다…</string>
     <string name="msg_load_fail">기록 로드 실패: %s</string>
-    <string name="msg_stats_preparing">통계 기능 준비중...</string>
+    <string name="msg_stats_preparing">통계 기능 준비중…</string>
 
-    <string name="msg_ticket_issuing">발급 요청 중...</string>
+    <string name="msg_ticket_issuing">발급 요청 중…</string>
     <string name="msg_ticket_issued">티켓이 발급되었습니다!</string>
     <string name="msg_issue_failed">발급 실패</string>
     <string name="msg_class_finish_timer">수업 종료 (출석 마감)</string>
     <string name="msg_timer_finished">측정이 완료되었습니다.</string>
     <string name="msg_measurement_complete">인원수 측정이 완료되었습니다!</string>
-    <string name="msg_ticket_checking_status">티켓 확인 중...</string>
+    <string name="msg_ticket_checking_status">티켓 확인 중…</string>
     <string name="msg_ticket_no_info">티켓 정보 없음</string>
-    <string name="format_today_schedule">오늘의 시간표 (%s)</string>
     <string name="format_schedule_item">• %1$s (%2$s - %3$s)</string>
+
+    <!-- Popup Comparison -->
+    <string name="popup_comparison_title">🔔 인원 측정 결과</string>
+    <string name="popup_comparison_total">총 인원 : %s</string>
+    <string name="popup_comparison_present">출석   시작 %1$d   →   종료 %2$d %3$s</string>
+    <string name="popup_comparison_absent">결석   시작 %1$d   →   종료 %2$d %3$s</string>
 </resources>

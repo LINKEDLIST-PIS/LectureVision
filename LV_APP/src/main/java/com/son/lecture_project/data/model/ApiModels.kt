@@ -46,17 +46,17 @@ data class User(
 data class Upload(
     val id: Int,
     @SerializedName("original_name")
-    val originalName: String,
+    val originalName: String?,
     @SerializedName("stored_name")
-    val storedName: String,
+    val storedName: String?,
     @SerializedName("abs_path")
-    val absPath: String,
+    val absPath: String?,
     @SerializedName("people_count")
     val peopleCount: Int,
     @SerializedName("uploaded_at")
-    val uploadedAt: String,
+    val uploadedAt: String?,
     @SerializedName("client_id")
-    val clientId: String
+    val clientId: String?
 )
 
 // Token for Model Server

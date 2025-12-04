@@ -1,6 +1,7 @@
 package com.son.lecture_project
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,16 +12,15 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.tabs.TabLayout
-import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.data.model.Upload
 import com.son.lecture_project.databinding.ScreenRecordsBinding
 import com.son.lecture_project.ui.home.Result
+import com.son.lecture_project.ui.records.RecordsAdapter
 import com.son.lecture_project.ui.records.RecordsViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
-import kotlin.math.roundToInt
 
 class RecordsScreen : Fragment() {
 
@@ -44,13 +44,15 @@ class RecordsScreen : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupRecyclerView()
-        setupTabsAndFilters() 
-        observeRecords()
-        observeSubjectList()
+        if (context != null) {
+            setupRecyclerView()
+            setupTabsAndFilters() 
+            observeRecords()
+            observeSubjectList()
 
-        recordsViewModel.loadRecords()
-        recordsViewModel.loadSubjectList()
+            recordsViewModel.loadRecords()
+            recordsViewModel.loadSubjectList()
+        }
     }
 
     override fun onResume() {
@@ -59,19 +61,29 @@ class RecordsScreen : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        recordsAdapter = RecordsAdapter(emptyList())
+        if (_binding == null) return
+        val ctx = context ?: return
+
+        recordsAdapter = RecordsAdapter()
         binding.rvRecords.apply {
-            layoutManager = LinearLayoutManager(context)
+            layoutManager = LinearLayoutManager(ctx)
             adapter = recordsAdapter
         }
     }
     
     private fun setupTabsAndFilters() {
-        binding.tabLayoutViewMode.addTab(binding.tabLayoutViewMode.newTab().setText(getString(R.string.records_tab_list)))
-        binding.tabLayoutViewMode.addTab(binding.tabLayoutViewMode.newTab().setText(getString(R.string.records_tab_stats)))
+        if (_binding == null) return
+        val ctx = context ?: return 
+
+        val listTabTitle = ctx.getString(R.string.records_tab_list)
+        val statsTabTitle = ctx.getString(R.string.records_tab_stats)
+        
+        binding.tabLayoutViewMode.addTab(binding.tabLayoutViewMode.newTab().setText(listTabTitle))
+        binding.tabLayoutViewMode.addTab(binding.tabLayoutViewMode.newTab().setText(statsTabTitle))
 
         binding.tabLayoutViewMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
+                if (_binding == null) return
                 if (tab?.position == 0) { // List
                     binding.contentFrame.visibility = View.VISIBLE
                     binding.layoutStats.visibility = View.GONE
@@ -86,37 +98,44 @@ class RecordsScreen : Fragment() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
         
-        // 초기화 시 기본값 설정
-        val defaultSubjects = listOf(getString(R.string.records_filter_all_subjects))
-        val classAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, defaultSubjects)
+        val allSubjects = ctx.getString(R.string.records_filter_all_subjects)
+        val defaultSubjects = listOf(allSubjects)
+        
+        val classAdapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, defaultSubjects)
         classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerClass.adapter = classAdapter
 
-        val dateAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, listOf(
-            getString(R.string.records_filter_all_period), 
-            getString(R.string.records_filter_recent_7), 
-            getString(R.string.records_filter_recent_30)
+        val dateAdapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, listOf(
+            ctx.getString(R.string.records_filter_all_period),
+            ctx.getString(R.string.records_filter_recent_1),
+            ctx.getString(R.string.records_filter_recent_7), 
+            ctx.getString(R.string.records_filter_recent_30)
         ))
         dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerDate.adapter = dateAdapter
         
-        // 스피너 선택 시 자동 검색 기능 추가 (선택 사항)
         binding.spinnerClass.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                // 사용자가 명시적으로 검색 버튼을 누르지 않아도 필터링을 원한다면 여기서 호출 가능
-                // filterAndShowRecords()
+                // Spinner selection changes will trigger filter via button or we could trigger here
+                // Currently triggered by Search button
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         binding.btnSearch.setOnClickListener {
-            filterAndShowRecords()
-            Toast.makeText(context, getString(R.string.msg_searching), Toast.LENGTH_SHORT).show()
+            if (_binding != null && isAdded) {
+                filterAndShowRecords()
+                context?.let {
+                    Toast.makeText(it, it.getString(R.string.msg_searching), Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
     private fun observeRecords() {
         recordsViewModel.records.observe(viewLifecycleOwner) { result ->
+            if (_binding == null || !isAdded) return@observe
+
             when (result) {
                 is Result.Loading -> {
                     binding.progressBar.visibility = View.VISIBLE
@@ -124,16 +143,21 @@ class RecordsScreen : Fragment() {
                 is Result.Success -> {
                     binding.progressBar.visibility = View.GONE
                     allRecords = result.data
+                    Log.d("RecordsScreen", "Records loaded: ${allRecords.size} items")
                     filterAndShowRecords()
                 }
                 is Result.Error -> {
                     binding.progressBar.visibility = View.GONE
                     allRecords = emptyList()
                     filterAndShowRecords()
-                    updateStats(emptyList()) // Update stats with empty data
+                    updateStats(emptyList())
                     
                     val errorMsg = result.exception.message ?: "Unknown Error"
-                    Toast.makeText(context, getString(R.string.msg_load_fail, errorMsg), Toast.LENGTH_SHORT).show()
+                    Log.e("RecordsScreen", "Records load error: $errorMsg")
+                    
+                    context?.let {
+                         Toast.makeText(it, it.getString(R.string.msg_load_fail, errorMsg), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -141,17 +165,23 @@ class RecordsScreen : Fragment() {
     
     private fun observeSubjectList() {
         recordsViewModel.subjectList.observe(viewLifecycleOwner) { subjects ->
-            val filterList = mutableListOf<String>()
-            filterList.add(getString(R.string.records_filter_all_subjects))
+            if (_binding == null || !isAdded) return@observe
+            val ctx = context ?: return@observe
+
+            val allSubjects = ctx.getString(R.string.records_filter_all_subjects)
+            val filterList = mutableListOf(allSubjects)
             filterList.addAll(subjects)
             
-            subjectList = subjects // 나중에 필터링할 때 인덱스 매핑용으로 저장 가능하나, 스피너 값을 직접 쓸 예정
+            this.subjectList = subjects
             
-            val classAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, filterList)
+            val classAdapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, filterList)
             classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.spinnerClass.adapter = classAdapter
 
-            // 과목 목록(및 총인원 정보)이 로드되면 화면을 갱신하여 결석 수 등을 업데이트
+            if (::recordsAdapter.isInitialized) {
+                recordsAdapter.updateTotalCountMap(recordsViewModel.getSubjectTotalCountMap())
+            }
+            
             if (allRecords.isNotEmpty()) {
                 filterAndShowRecords()
             }
@@ -159,230 +189,249 @@ class RecordsScreen : Fragment() {
     }
     
     private fun updateStats(records: List<Upload>) {
-        val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
+        if (_binding == null || !isAdded) return
+        try {
+            val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
 
-        if (records.isEmpty()) {
-            binding.tvAttendanceRate.text = "-"
-            binding.progressAttendance.progress = 0
-            binding.tvStatsPresent.text = "0명"
-            binding.tvStatsAbsent.text = "0명" // 결석 수도 초기화
-            resetBarChart()
-            return
-        }
-
-        // 총 측정된 인원(출석 인원)
-        val totalPresent = records.sumOf { it.peopleCount }
-        // 평균 출석 인원
-        val avgPresent = totalPresent.toDouble() / records.size
-
-        // 결석 수 계산: 각 기록마다 (총원 - 출석)을 더함
-        val totalAbsent = records.sumOf { record ->
-            val courseName = record.originalName
-            val maxStudents = subjectTotalCountMap[courseName] ?: 0
-            if (maxStudents > 0) {
-                (maxStudents - record.peopleCount).coerceAtLeast(0)
-            } else {
-                0
+            if (records.isEmpty()) {
+                binding.tvRatePresent.text = "0%"
+                binding.tvRateAbsent.text = "0%"
+                resetTop3()
+                resetBarChart()
+                return
             }
-        }
-        
-        binding.tvAttendanceRate.text = String.format(Locale.getDefault(), "%.1f명", avgPresent)
-        binding.progressAttendance.progress = 0 
 
-        binding.tvStatsPresent.text = "${totalPresent}명"
-        binding.tvStatsAbsent.text = "${totalAbsent}명" 
+            var totalPossible = 0
+            var totalPresent = 0
+            
+            // map: subjectName -> Pair(totalPossible, totalAbsent)
+            val subjectStatsMap = mutableMapOf<String, Pair<Int, Int>>() 
+            
+            val dayPresentCounts = IntArray(5)
+            val dayAbsentCounts = IntArray(5)
+            
+            val parsers = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            )
+            val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
 
-        val dayCounts = MutableList(5) { 0 }
-        val dayUploadCounts = MutableList(5) { 0 }
-
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-
-        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
-
-        records.forEach { record ->
-            try {
-                val dateString = if (record.uploadedAt.contains(".")) {
-                     record.uploadedAt.substring(0, record.uploadedAt.indexOf(".")) 
-                } else {
-                     record.uploadedAt
-                }
+            records.forEach { record ->
+                val courseName = record.originalName ?: ""
+                val maxStudents = subjectTotalCountMap[courseName] ?: 0
                 
-                val date = sdf.parse(dateString)
-                if (date != null) {
-                    cal.time = date
+                if (maxStudents > 0) {
+                    val present = record.peopleCount
+                    val absent = (maxStudents - present).coerceAtLeast(0)
                     
-                    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                    if (dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY) {
-                        val index = dayOfWeek - Calendar.MONDAY
-                        dayCounts[index] += record.peopleCount
-                        dayUploadCounts[index]++
+                    totalPossible += maxStudents
+                    totalPresent += present
+                    
+                    val currentStat = subjectStatsMap.getOrDefault(courseName, 0 to 0)
+                    subjectStatsMap[courseName] = (currentStat.first + maxStudents) to (currentStat.second + absent)
+
+                    val dateStr = record.uploadedAt
+                    if (!dateStr.isNullOrEmpty()) {
+                        val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
+                        for (sdf in parsers) {
+                            try {
+                                val date = sdf.parse(cleanDateStr)
+                                if (date != null) {
+                                    cal.time = date
+                                    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                                    if (dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY) {
+                                        val index = dayOfWeek - Calendar.MONDAY
+                                        if (index in 0..4) {
+                                            dayPresentCounts[index] += present
+                                            dayAbsentCounts[index] += absent
+                                        }
+                                    }
+                                    break 
+                                }
+                            } catch (e: Exception) { /* ignore */ }
+                        }
                     }
                 }
-            } catch (e: Exception) {
-                // Ignore parsing error
             }
+            
+            val attendanceRate = if (totalPossible > 0) (totalPresent.toDouble() / totalPossible * 100) else 0.0
+            val absenceRate = if (totalPossible > 0) ((totalPossible - totalPresent).toDouble() / totalPossible * 100) else 0.0
+            
+            binding.tvRatePresent.text = String.format(Locale.getDefault(), "%.1f%%", attendanceRate)
+            binding.tvRateAbsent.text = String.format(Locale.getDefault(), "%.1f%%", absenceRate)
+
+            // Top 3 Calculation
+            val sortedStats = subjectStatsMap.map { (name, stats) ->
+                val (sTotal, sAbsent) = stats
+                val sRate = if (sTotal > 0) (sAbsent.toDouble() / sTotal * 100) else 0.0
+                name to sRate
+            }.sortedByDescending { it.second }
+
+            updateTop3(sortedStats)
+
+            val maxDailyTotal = (0..4).maxOfOrNull { dayPresentCounts[it] + dayAbsentCounts[it] } ?: 0
+            val finalMax = if (maxDailyTotal > 0) maxDailyTotal else 1
+            
+            updateDayBar(binding.viewBarMonPresent, binding.viewBarMonAbsent, dayPresentCounts[0], dayAbsentCounts[0], finalMax)
+            updateDayBar(binding.viewBarTuePresent, binding.viewBarTueAbsent, dayPresentCounts[1], dayAbsentCounts[1], finalMax)
+            updateDayBar(binding.viewBarWedPresent, binding.viewBarWedAbsent, dayPresentCounts[2], dayAbsentCounts[2], finalMax)
+            updateDayBar(binding.viewBarThuPresent, binding.viewBarThuAbsent, dayPresentCounts[3], dayAbsentCounts[3], finalMax)
+            updateDayBar(binding.viewBarFriPresent, binding.viewBarFriAbsent, dayPresentCounts[4], dayAbsentCounts[4], finalMax)
+
+        } catch (e: Exception) {
+            Log.e("RecordsScreen", "Error updating stats", e)
         }
-        
-        val maxCount = dayCounts.maxOrNull() ?: 1
-        val scale = if (maxCount > 0) maxCount else 1
-        
-        updateBar(binding.viewBarMon, dayCounts[0], scale)
-        updateBar(binding.viewBarTue, dayCounts[1], scale)
-        updateBar(binding.viewBarWed, dayCounts[2], scale)
-        updateBar(binding.viewBarThu, dayCounts[3], scale)
-        updateBar(binding.viewBarFri, dayCounts[4], scale)
     }
 
-    private fun updateBar(view: View, count: Int, max: Int) {
-        val maxBarHeight = 120
-        val density = resources.displayMetrics.density
-        val heightDp = if (max > 0) (count.toFloat() / max * maxBarHeight) else 0f
+    private fun updateTop3(sortedStats: List<Pair<String, Double>>) {
+        resetTop3()
         
-        val params = view.layoutParams
-        params.height = (heightDp * density).toInt().coerceAtLeast((1 * density).toInt())
-        view.layoutParams = params
+        if (sortedStats.isNotEmpty()) {
+            binding.tvTop1Name.text = sortedStats[0].first
+            binding.tvTop1Rate.text = String.format(Locale.getDefault(), "%.1f%%", sortedStats[0].second)
+        }
+        if (sortedStats.size >= 2) {
+            binding.tvTop2Name.text = sortedStats[1].first
+            binding.tvTop2Rate.text = String.format(Locale.getDefault(), "%.1f%%", sortedStats[1].second)
+        }
+        if (sortedStats.size >= 3) {
+            binding.tvTop3Name.text = sortedStats[2].first
+            binding.tvTop3Rate.text = String.format(Locale.getDefault(), "%.1f%%", sortedStats[2].second)
+        }
+    }
+
+    private fun resetTop3() {
+        binding.tvTop1Name.text = "-"
+        binding.tvTop1Rate.text = "0%"
+        binding.tvTop2Name.text = "-"
+        binding.tvTop2Rate.text = "0%"
+        binding.tvTop3Name.text = "-"
+        binding.tvTop3Rate.text = "0%"
+    }
+
+    private fun updateDayBar(presentView: View, absentView: View, presentCount: Int, absentCount: Int, max: Int) {
+        if (_binding == null) return
+        try {
+            val maxBarHeightDp = 150f 
+            val density = resources.displayMetrics.density
+            
+            val presentHeight = if (max > 0) (presentCount.toFloat() / max * maxBarHeightDp) else 0f
+            val absentHeight = if (max > 0) (absentCount.toFloat() / max * maxBarHeightDp) else 0f
+            
+            val minHeight = (1 * density).toInt()
+            
+            val pParams = presentView.layoutParams
+            pParams.height = (presentHeight * density).toInt().coerceAtLeast(if (presentCount > 0) minHeight else 0)
+            presentView.layoutParams = pParams
+            
+            val aParams = absentView.layoutParams
+            aParams.height = (absentHeight * density).toInt().coerceAtLeast(if (absentCount > 0) minHeight else 0)
+            absentView.layoutParams = aParams
+            
+        } catch (e: Exception) {
+            Log.e("RecordsScreen", "Error updating bar", e)
+        }
     }
     
     private fun resetBarChart() {
-        val zeroHeight = (1 * resources.displayMetrics.density).toInt()
-        binding.viewBarMon.layoutParams.height = zeroHeight
-        binding.viewBarTue.layoutParams.height = zeroHeight
-        binding.viewBarWed.layoutParams.height = zeroHeight
-        binding.viewBarThu.layoutParams.height = zeroHeight
-        binding.viewBarFri.layoutParams.height = zeroHeight
-        binding.viewBarMon.requestLayout()
+        if (_binding == null) return
+        try {
+            val views = listOf(
+                binding.viewBarMonPresent, binding.viewBarMonAbsent,
+                binding.viewBarTuePresent, binding.viewBarTueAbsent,
+                binding.viewBarWedPresent, binding.viewBarWedAbsent,
+                binding.viewBarThuPresent, binding.viewBarThuAbsent,
+                binding.viewBarFriPresent, binding.viewBarFriAbsent
+            )
+            
+            views.forEach { v ->
+                val params = v.layoutParams
+                params.height = 0
+                v.layoutParams = params
+            }
+        } catch (e: Exception) {
+            Log.e("RecordsScreen", "Error resetting bar chart", e)
+        }
     }
 
     private fun filterAndShowRecords() {
-        val selectedDateFilter = binding.spinnerDate.selectedItemPosition
+        if (_binding == null || !isAdded) return
         
-        // 과목 필터링
-        val selectedSubject = binding.spinnerClass.selectedItem as? String
-        val isAllSubjects = selectedSubject == getString(R.string.records_filter_all_subjects) || selectedSubject == null
+        try {
+            if (!::recordsAdapter.isInitialized) return 
 
-        // 선택된 과목의 시간표 정보 가져오기 (필터링용)
-        val targetSchedules = if (!isAllSubjects) {
-            recordsViewModel.getSchedulesForSubject(selectedSubject!!)
-        } else {
-            emptyList()
-        }
-
-        // 날짜 필터 계산
-        val thresholdDate = if (selectedDateFilter == 0) null else {
-            val calendar = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
+            val selectedDateFilter = binding.spinnerDate.selectedItemPosition
+            val selectedSubject = binding.spinnerClass.selectedItem as? String
             
-            val daysToSubtract = if (selectedDateFilter == 1) 7 else 30
-            calendar.add(Calendar.DAY_OF_YEAR, -daysToSubtract)
-            calendar.time
-        }
-        
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
+            val allSubjectsString = context?.getString(R.string.records_filter_all_subjects) ?: "전체 과목"
+            val isAllSubjects = selectedSubject == allSubjectsString || selectedSubject == null
 
-        val filteredList = allRecords.filter { record ->
-            // 1. 날짜/시간 파싱 (공통)
-            var recordDateValid = false
-            
-            // 날짜 파싱 시도
-            try {
-                val dateString = if (record.uploadedAt.contains(".")) {
-                     record.uploadedAt.substring(0, record.uploadedAt.indexOf(".")) 
-                } else {
-                     record.uploadedAt
-                }
-                val recordDate = sdf.parse(dateString)
-                
-                if (recordDate != null) {
-                    // 1-1. 날짜 필터링 체크
-                    val dateMatch = thresholdDate == null || !recordDate.before(thresholdDate)
+            val thresholdDate = if (selectedDateFilter == 0) null else {
+                Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul")).apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
                     
-                    // 1-2. 과목 필터링 체크 (시간 비교)
-                    val subjectMatch = if (isAllSubjects) {
-                        true
-                    } else {
-                        cal.time = recordDate
-                        isRecordInSchedules(cal, targetSchedules)
+                    val daysToSubtract = when(selectedDateFilter) {
+                        1 -> -1
+                        2 -> -7
+                        3 -> -30
+                        else -> 0
                     }
-                    
-                    recordDateValid = dateMatch && subjectMatch
-                }
-            } catch (e: Exception) {
-                // 파싱 실패 시, 전체 보기면 포함하지만 필터링 중이면 제외하는게 안전
-                recordDateValid = isAllSubjects && thresholdDate == null
+                    add(Calendar.DAY_OF_YEAR, daysToSubtract)
+                }.time
             }
             
-            recordDateValid
-        }
-        
-        updateRecordList(filteredList)
-        updateStats(filteredList) // Recalculate stats based on filter
-    }
-    
-    // 기록된 시간이 해당 과목의 수업 시간 범위 내에 있는지 확인
-    private fun isRecordInSchedules(cal: Calendar, schedules: List<ClassSchedule>): Boolean {
-        // 1. 요일 확인
-        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-        val dayStr = when (dayOfWeek) {
-            Calendar.MONDAY -> "월"
-            Calendar.TUESDAY -> "화"
-            Calendar.WEDNESDAY -> "수"
-            Calendar.THURSDAY -> "목"
-            Calendar.FRIDAY -> "금"
-            else -> ""
-        }
-        
-        if (dayStr.isEmpty()) return false
-        
-        // 2. 시간 확인 (분 단위)
-        val hour = cal.get(Calendar.HOUR_OF_DAY)
-        val minute = cal.get(Calendar.MINUTE)
-        val recordTime = hour * 60 + minute
-        
-        // 해당 요일이면서 시간이 범위 내에 있는 스케줄이 하나라도 있으면 OK
-        return schedules.any { schedule ->
-            schedule.day.contains(dayStr) && isTimeInRange(recordTime, schedule.startTime, schedule.endTime)
-        }
-    }
-    
-    private fun isTimeInRange(recordTime: Int, startStr: String, endStr: String): Boolean {
-        val start = parseTimeToMinutes(startStr)
-        val end = parseTimeToMinutes(endStr)
-        
-        if (start == -1 || end == -1) return false
-        
-        // 여유 시간 ±10분 고려? 일단 정확히 범위 내로
-        return recordTime in start..end
-    }
-    
-    private fun parseTimeToMinutes(timeStr: String): Int {
-        return try {
-            val parts = timeStr.split(":")
-            val h = parts[0].toInt()
-            val m = if (parts.size > 1) parts[1].toInt() else 0
-            h * 60 + m
+            val parsers = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            )
+
+            val filteredList = allRecords.filter { record ->
+                val dateMatch = thresholdDate == null || try {
+                    var parsedDate: java.util.Date? = null
+                    val dateStr = record.uploadedAt
+                    
+                    if (!dateStr.isNullOrEmpty()) {
+                        val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
+                        for (sdf in parsers) {
+                            try {
+                                parsedDate = sdf.parse(cleanDateStr)
+                                if (parsedDate != null) break
+                            } catch (e: Exception) { /* ignore */ }
+                        }
+                    }
+                    
+                    if (parsedDate != null) {
+                        parsedDate.after(thresholdDate)
+                    } else {
+                        false
+                    }
+                } catch (e: Exception) { false }
+
+                val subjectMatch = isAllSubjects || (record.originalName ?: "") == selectedSubject
+                
+                dateMatch && subjectMatch
+            }
+            
+            updateRecordList(filteredList)
+            updateStats(filteredList)
         } catch (e: Exception) {
-            -1
+            Log.e("RecordsScreen", "Error filtering records", e)
         }
     }
 
     private fun updateRecordList(records: List<Upload>) {
-        binding.tvSummary.text = getString(R.string.records_total_count, records.size)
-        val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
-
-        if (records.isEmpty()) {
-            binding.rvRecords.visibility = View.GONE
-            binding.layoutEmpty.visibility = View.VISIBLE
-        } else {
-            binding.rvRecords.visibility = View.VISIBLE
-            binding.layoutEmpty.visibility = View.GONE
-            recordsAdapter.updateData(records, subjectTotalCountMap)
-        }
+        if (_binding == null || !isAdded) return
+        
+        val totalCountStr = context?.getString(R.string.records_total_count, records.size) ?: "총 ${records.size}개의 기록"
+        binding.tvSummary.text = totalCountStr
+        
+        binding.rvRecords.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
+        binding.layoutEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
+        
+        recordsAdapter.submitList(records)
     }
 
     override fun onDestroyView() {

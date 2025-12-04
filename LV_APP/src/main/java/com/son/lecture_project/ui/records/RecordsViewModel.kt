@@ -38,6 +38,7 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
             _records.value = Result.Loading
             try {
                 val token = TokenManager.getToken()
+                
                 if (token == null) {
                     _records.value = Result.Error(IllegalStateException("로그인이 필요합니다."))
                     return@launch
@@ -62,7 +63,7 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
             val schedules = getLocalSchedules()
             cachedSchedules = schedules
             // 과목명 추출, 중복 제거, 정렬
-            _subjectList.value = schedules.map { it.name }.distinct().sorted()
+            _subjectList.value = cachedSchedules.map { it.name }.distinct().sorted()
         }
     }
     
@@ -75,6 +76,11 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
     fun getSubjectTotalCountMap(): Map<String, Int> {
         return cachedSchedules.groupBy { it.name }
             .mapValues { (_, list) -> list.maxOfOrNull { it.totalStudents } ?: 0 }
+    }
+    
+    // 과목별 색상 맵 반환 (추가됨)
+    fun getSubjectColorMap(): Map<String, String> {
+        return cachedSchedules.associate { it.name to (it.color ?: "#CCCCCC") }
     }
 
     private suspend fun getLocalSchedules(): List<ClassSchedule> {

@@ -12,22 +12,15 @@ import java.util.TimeZone
 import kotlin.math.abs
 
 class RecordsAdapter(
-    private var records: List<Upload>,
-    private var subjectTotalCountMap: Map<String, Int> = emptyMap()
+    private var records: List<Upload> = emptyList(), 
+    private var subjectTotalCountMap: Map<String, Int> = emptyMap(),
+    private var subjectColorMap: Map<String, String> = emptyMap() // 색상 맵 추가
 ) : RecyclerView.Adapter<RecordsAdapter.RecordViewHolder>() {
 
-    // 과목별 색상을 지정하기 위한 팔레트
+    // 기존 팔레트는 백업으로 유지
     private val colorPalette = listOf(
-        "#FF6B6B", // Red
-        "#4ECDC4", // Teal
-        "#45B7D1", // Blue
-        "#FFA07A", // Light Salmon
-        "#96CEB4", // Pale Green
-        "#FFEEAD", // Pale Yellow
-        "#D4A5A5", // Pinkish
-        "#9B59B6", // Purple
-        "#3498DB", // Dodger Blue
-        "#E67E22"  // Carrot
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#96CEB4", 
+        "#FFEEAD", "#D4A5A5", "#9B59B6", "#3498DB", "#E67E22"
     )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecordViewHolder {
@@ -41,9 +34,26 @@ class RecordsAdapter(
 
     override fun getItemCount(): Int = records.size
 
-    fun updateData(newRecords: List<Upload>, newSubjectTotalCountMap: Map<String, Int>) {
+    fun submitList(newRecords: List<Upload>) {
+        this.records = newRecords
+        notifyDataSetChanged()
+    }
+
+    fun updateTotalCountMap(newMap: Map<String, Int>) {
+        this.subjectTotalCountMap = newMap
+        notifyDataSetChanged()
+    }
+    
+    // 색상 맵 업데이트 함수 추가
+    fun updateColorMap(newColorMap: Map<String, String>) {
+        this.subjectColorMap = newColorMap
+        notifyDataSetChanged()
+    }
+
+    fun updateData(newRecords: List<Upload>, newSubjectTotalCountMap: Map<String, Int>, newSubjectColorMap: Map<String, String>) {
         this.records = newRecords
         this.subjectTotalCountMap = newSubjectTotalCountMap
+        this.subjectColorMap = newSubjectColorMap
         notifyDataSetChanged()
     }
 
@@ -51,47 +61,67 @@ class RecordsAdapter(
         fun bind(record: Upload) {
 
             val formattedDate = try {
-                // 1. 서버 시간(UTC) 파싱 설정
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                inputFormat.timeZone = TimeZone.getTimeZone("UTC") // 입력은 UTC 기준
-
-                // 2. 출력 시간(KST) 및 요일 설정
-                val outputFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault())
-                outputFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul") // 출력은 한국 시간 기준
-                
-                val dayOfWeekFormat = SimpleDateFormat("E", Locale.KOREAN) // 요일 (월, 화, 수...)
-                dayOfWeekFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
-
-                val dateString = if (record.uploadedAt.contains(".")) {
-                     record.uploadedAt.substring(0, record.uploadedAt.indexOf(".")) // 소수점 이하 제거
+                val rawDate = record.uploadedAt
+                if (rawDate.isNullOrEmpty()) {
+                    "-"
                 } else {
-                     record.uploadedAt
-                }
-                val date = inputFormat.parse(dateString.replace("Z", ""))
+                    val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    inputFormat.timeZone = TimeZone.getTimeZone("UTC")
 
-                if (date != null) {
-                    val dateText = outputFormat.format(date)
-                    val dayOfWeek = dayOfWeekFormat.format(date)
-                    "$dateText ($dayOfWeek)"
-                } else {
-                    record.uploadedAt
+                    val outputFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault())
+                    outputFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
+                    
+                    val dayOfWeekFormat = SimpleDateFormat("E", Locale.KOREAN)
+                    dayOfWeekFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
+
+                    val dateString = if (rawDate.contains(".")) {
+                        rawDate.substringBefore(".").replace("Z", "")
+                    } else {
+                         rawDate.replace("Z", "")
+                    }
+
+                    val date = try {
+                        inputFormat.parse(dateString)
+                    } catch (e: Exception) {
+                         val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                         fallbackFormat.timeZone = TimeZone.getTimeZone("UTC")
+                         fallbackFormat.parse(dateString)
+                    }
+
+                    if (date != null) {
+                        val dateText = outputFormat.format(date)
+                        val dayOfWeek = dayOfWeekFormat.format(date)
+                        "$dateText ($dayOfWeek)"
+                    } else {
+                        rawDate
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                record.uploadedAt
+                record.uploadedAt ?: "-"
             }
             
             binding.tvDate.text = formattedDate
             
-            val courseName = if (record.originalName.isNullOrEmpty()) "측정 기록" else record.originalName
+            val courseName = record.originalName ?: "측정 기록"
             binding.tvCourseName.text = courseName
             
-            // 1. 과목 색상 설정 (이름 기반 해시)
-            val colorIndex = abs(courseName.hashCode()) % colorPalette.size
-            val color = Color.parseColor(colorPalette[colorIndex])
+            // [수정] 시간표 색상 우선 적용, 없으면 기존 해시 기반 색상 사용
+            val assignedColor = subjectColorMap[courseName]
+            val color = if (assignedColor != null) {
+                try {
+                     Color.parseColor(assignedColor)
+                } catch (e: Exception) {
+                     // 색상 파싱 실패 시 팔레트 사용
+                     val colorIndex = abs(courseName.hashCode()) % colorPalette.size
+                     Color.parseColor(colorPalette[colorIndex])
+                }
+            } else {
+                val colorIndex = abs(courseName.hashCode()) % colorPalette.size
+                Color.parseColor(colorPalette[colorIndex])
+            }
             binding.cvColor.setCardBackgroundColor(color)
 
-            // 2. 인원 정보 설정 (결석 수 계산 적용)
             val totalStudents = subjectTotalCountMap[courseName] ?: 0
             val measuredCount = record.peopleCount
             

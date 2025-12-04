@@ -20,18 +20,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tv_type"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="공지사항"
-                android:textSize="12sp"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/bg_chip"
-                android:backgroundTint="@color/sky_blue_500"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
-                android:layout_marginRight="8dp"/>
+            <!-- 이미지가 필요없다고 하셨으므로 아이콘 제거 -->
 
             <TextView
                 android:id="@+id/tv_title"

@@ -45,21 +45,34 @@ class TimetableView @JvmOverloads constructor(
     private val hourHeight = dpToPx(60f)
 
     // --- 페인트 객체 (Paints) ---
-    private val linePaint = Paint().apply { color = Color.parseColor("#E0E0E0") }
+    // 그리드 선을 더 진하고 선명하게 보이도록 색상 및 두께 조정
+    private val linePaint = Paint().apply { 
+        color = ContextCompat.getColor(context, R.color.stroke_color) // 테마 색상 사용 (다크모드 대응)
+        strokeWidth = dpToPx(1f) // 선 두께 명시
+    }
+    
     private val dayLabelPaint = TextPaint().apply { 
         color = ContextCompat.getColor(context, R.color.text_primary) // 리소스 컬러 사용
         textSize = dpToPx(14f)
         textAlign = Paint.Align.CENTER 
+        isAntiAlias = true
     }
+    
     private val timeLabelPaint = TextPaint().apply { 
         color = ContextCompat.getColor(context, R.color.text_secondary) // 리소스 컬러 사용
         textSize = dpToPx(12f)
         textAlign = Paint.Align.CENTER 
+        isAntiAlias = true
     }
-    private val classBlockPaint = Paint()
+    
+    private val classBlockPaint = Paint().apply {
+        isAntiAlias = true
+    }
+    
     private val classTextPaint = TextPaint().apply { 
         color = Color.WHITE
         textSize = dpToPx(11f) // 글자 크기 약간 줄임 (정보량 증가 대응)
+        isAntiAlias = true
     }
 
     // 터치 영역 감지용 리스트
@@ -112,8 +125,9 @@ class TimetableView @JvmOverloads constructor(
 
         drawDayLabels(canvas, dayColumnWidth)
         drawTimeGrid(canvas)
-        drawVerticalLines(canvas, dayColumnWidth)
+        drawVerticalLines(canvas, dayColumnWidth) // 세로선 그리기 (요일 구분선)
         drawClassBlocks(canvas, dayColumnWidth)
+        drawBorder(canvas) // 전체 외곽선 추가
     }
 
     // --- Private Drawing Helpers (모듈화) ---
@@ -124,6 +138,8 @@ class TimetableView @JvmOverloads constructor(
             val y = dayLabelHeight / 2 - (dayLabelPaint.descent() + dayLabelPaint.ascent()) / 2
             canvas.drawText(day, x, y, dayLabelPaint)
         }
+        // 요일 헤더 아래 가로선
+        canvas.drawLine(timeLabelWidth, dayLabelHeight, width.toFloat(), dayLabelHeight, linePaint)
     }
 
     private fun drawTimeGrid(canvas: Canvas) {
@@ -133,20 +149,35 @@ class TimetableView @JvmOverloads constructor(
             // 텍스트 수직 중앙 정렬 계산
             val textY = y + hourHeight / 2 - (timeLabelPaint.descent() + timeLabelPaint.ascent()) / 2
             
+            // 시간 텍스트 (9, 10 ...)
             canvas.drawText(String.format("%02d", hour), timeLabelWidth / 2, textY, timeLabelPaint)
-            canvas.drawLine(timeLabelWidth, y, width.toFloat(), y, linePaint)
+            
+            // 시간 구분 가로선 (시간표 영역 전체 가로지르도록)
+            canvas.drawLine(0f, y, width.toFloat(), y, linePaint)
         }
         
         // 마지막 하단 선
         val finalY = dayLabelHeight + (END_HOUR - START_HOUR + 1) * hourHeight
-        canvas.drawLine(timeLabelWidth, finalY, width.toFloat(), finalY, linePaint)
+        canvas.drawLine(0f, finalY, width.toFloat(), finalY, linePaint)
     }
 
     private fun drawVerticalLines(canvas: Canvas, columnWidth: Float) {
-        for (i in 0..DAYS.size) {
+        // 시간 텍스트 영역 오른쪽 세로선 (첫 번째 세로선)
+        canvas.drawLine(timeLabelWidth, 0f, timeLabelWidth, height.toFloat(), linePaint)
+
+        // 각 요일 사이의 세로선
+        for (i in 1..DAYS.size) {
             val x = timeLabelWidth + i * columnWidth
             canvas.drawLine(x, 0f, x, height.toFloat(), linePaint)
         }
+    }
+    
+    private fun drawBorder(canvas: Canvas) {
+        // 전체 테두리를 그려서 깔끔하게 마감
+        canvas.drawLine(0f, 0f, width.toFloat(), 0f, linePaint) // Top
+        canvas.drawLine(0f, 0f, 0f, height.toFloat(), linePaint) // Left
+        canvas.drawLine(width.toFloat(), 0f, width.toFloat(), height.toFloat(), linePaint) // Right
+        canvas.drawLine(0f, height.toFloat(), width.toFloat(), height.toFloat(), linePaint) // Bottom
     }
 
     private fun drawClassBlocks(canvas: Canvas, columnWidth: Float) {
@@ -166,8 +197,8 @@ class TimetableView @JvmOverloads constructor(
             val right = left + columnWidth
             val bottom = dayLabelHeight + (endHour - START_HOUR) * hourHeight
 
-            // 여백을 둔 사각형 생성
-            val rect = RectF(left + 2, top + 2, right - 2, bottom - 2)
+            // 여백을 둔 사각형 생성 (경계선 침범 방지를 위해 약간 줄임)
+            val rect = RectF(left + 1, top + 1, right - 1, bottom - 1)
             
             // 블록 그리기
             classBlockPaint.color = Color.parseColor(classInfo.color)

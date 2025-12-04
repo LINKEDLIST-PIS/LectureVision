@@ -13,5 +13,14 @@
     
     <!-- 아이콘 틴트 등 -->
     <color name="icon_tint">#9CA3AF</color>
-    <color name="nav_item_color_white">#FFFFFF</color>
+
+    <!-- 기본 컬러 팔레트 -->
+    <color name="btn_primary">#0ea5e9</color>
+    <color name="sky_blue_500">#38BDF8</color>
+    <color name="red_500">#EF4444</color>
+    <color name="green_500">#4CAF50</color>
+    <color name="transparent">#00000000</color>
+    
+    <!-- Timetable Grid Color (Lighter in Dark mode) -->
+    <color name="grid_line">#4B5563</color>
 </resources>

@@ -3,6 +3,8 @@ package com.son.lecture_project
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.son.lecture_project.data.model.Upload
 import com.son.lecture_project.databinding.ItemRecordBinding
@@ -11,23 +13,12 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.abs
 
-class RecordsAdapter(
-    private var records: List<Upload>,
-    private var subjectTotalCountMap: Map<String, Int> = emptyMap()
-) : RecyclerView.Adapter<RecordsAdapter.RecordViewHolder>() {
+class RecordsAdapter(private var subjectTotalCountMap: Map<String, Int> = emptyMap()) 
+    : ListAdapter<Upload, RecordsAdapter.RecordViewHolder>(RecordDiffCallback()) {
 
-    // 과목별 색상을 지정하기 위한 팔레트
     private val colorPalette = listOf(
-        "#FF6B6B", // Red
-        "#4ECDC4", // Teal
-        "#45B7D1", // Blue
-        "#FFA07A", // Light Salmon
-        "#96CEB4", // Pale Green
-        "#FFEEAD", // Pale Yellow
-        "#D4A5A5", // Pinkish
-        "#9B59B6", // Purple
-        "#3498DB", // Dodger Blue
-        "#E67E22"  // Carrot
+        "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#96CEB4", 
+        "#FFEEAD", "#D4A5A5", "#9B59B6", "#3498DB", "#E67E22"
     )
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecordViewHolder {
@@ -36,73 +27,66 @@ class RecordsAdapter(
     }
 
     override fun onBindViewHolder(holder: RecordViewHolder, position: Int) {
-        holder.bind(records[position])
+        holder.bind(getItem(position))
     }
 
-    override fun getItemCount(): Int = records.size
-
-    fun updateData(newRecords: List<Upload>, newSubjectTotalCountMap: Map<String, Int>) {
-        this.records = newRecords
-        this.subjectTotalCountMap = newSubjectTotalCountMap
-        notifyDataSetChanged()
+    fun updateTotalCountMap(newMap: Map<String, Int>) {
+        subjectTotalCountMap = newMap
+        // ListAdapter는 submitList가 호출될 때 아이템을 다시 그리므로, 전체를 다시 그릴 필요가 없음
+        // 만약 카운트만 바뀌고 아이템 리스트는 그대로라면 notifyDataSetChanged()를 호출해야 할 수도 있음
+        // 하지만 보통 데이터 로드 시 함께 갱신되므로 submitList로 충분함
     }
 
     inner class RecordViewHolder(private val binding: ItemRecordBinding) : RecyclerView.ViewHolder(binding.root) {
+        private val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        private val outputFormat = SimpleDateFormat("yyyy.MM.dd HH:mm (E)", Locale.KOREAN).apply {
+            timeZone = TimeZone.getTimeZone("Asia/Seoul")
+        }
+
         fun bind(record: Upload) {
-
             val formattedDate = try {
-                // 1. 서버 시간(UTC) 파싱 설정
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                inputFormat.timeZone = TimeZone.getTimeZone("UTC") // 입력은 UTC 기준
-
-                // 2. 출력 시간(KST) 및 요일 설정
-                val outputFormat = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault())
-                outputFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul") // 출력은 한국 시간 기준
-                
-                val dayOfWeekFormat = SimpleDateFormat("E", Locale.KOREAN) // 요일 (월, 화, 수...)
-                dayOfWeekFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
-
-                val dateString = if (record.uploadedAt.contains(".")) {
-                     record.uploadedAt.substring(0, record.uploadedAt.indexOf(".")) // 소수점 이하 제거
+                val dateString = record.uploadedAt?.substringBefore(".")
+                if (dateString != null) {
+                    val date = inputFormat.parse(dateString.replace("Z", ""))
+                    date?.let { outputFormat.format(it) } ?: (record.uploadedAt ?: "")
                 } else {
-                     record.uploadedAt
-                }
-                val date = inputFormat.parse(dateString.replace("Z", ""))
-
-                if (date != null) {
-                    val dateText = outputFormat.format(date)
-                    val dayOfWeek = dayOfWeekFormat.format(date)
-                    "$dateText ($dayOfWeek)"
-                } else {
-                    record.uploadedAt
+                    ""
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
-                record.uploadedAt
+                record.uploadedAt ?: ""
             }
             
-            binding.tvDate.text = formattedDate
-            
-            val courseName = if (record.originalName.isNullOrEmpty()) "측정 기록" else record.originalName
-            binding.tvCourseName.text = courseName
-            
-            // 1. 과목 색상 설정 (이름 기반 해시)
-            val colorIndex = abs(courseName.hashCode()) % colorPalette.size
-            val color = Color.parseColor(colorPalette[colorIndex])
-            binding.cvColor.setCardBackgroundColor(color)
+            val courseName = record.originalName?.takeIf { it.isNotEmpty() } ?: "측정 기록"
 
-            // 2. 인원 정보 설정 (결석 수 계산 적용)
+            binding.tvDate.text = formattedDate
+            binding.tvCourseName.text = courseName
+
+            val colorIndex = abs(courseName.hashCode()) % colorPalette.size
+            binding.cvColor.setCardBackgroundColor(Color.parseColor(colorPalette[colorIndex]))
+
             val totalStudents = subjectTotalCountMap[courseName] ?: 0
             val measuredCount = record.peopleCount
             
-            binding.tvTotalCount.text = "출석 : ${measuredCount}명"
+            binding.tvTotalCount.text = itemView.context.getString(R.string.record_item_present, measuredCount)
 
             if (totalStudents > 0) {
                 val absentCount = (totalStudents - measuredCount).coerceAtLeast(0)
-                binding.tvAbsentCount.text = "결석 : ${absentCount}명"
+                binding.tvAbsentCount.text = itemView.context.getString(R.string.record_item_absent, absentCount.toString())
             } else {
-                binding.tvAbsentCount.text = "결석 : -명"
+                binding.tvAbsentCount.text = itemView.context.getString(R.string.record_item_absent, "-")
             }
         }
+    }
+}
+
+class RecordDiffCallback : DiffUtil.ItemCallback<Upload>() {
+    override fun areItemsTheSame(oldItem: Upload, newItem: Upload): Boolean {
+        return oldItem.id == newItem.id
+    }
+
+    override fun areContentsTheSame(oldItem: Upload, newItem: Upload): Boolean {
+        return oldItem == newItem
     }
 }

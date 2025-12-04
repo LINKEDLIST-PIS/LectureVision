@@ -14,6 +14,7 @@
     <color name="text_secondary">#888888</color>
     <color name="btn_primary">#0ea5e9</color>
     <color name="red_500">#EF4444</color>
+    <color name="green_500">#4CAF50</color> <!-- Added for consistency -->
     <color name="sky_blue_500">#38BDF8</color>
     <color name="grey_400">#9CA3AF</color>
     <color name="yellow_500">#FFEB3B</color>
@@ -26,4 +27,10 @@
     <color name="dark_text_primary">#F3F4F6</color>
     <color name="dark_text_secondary">#9CA3AF</color>
     <color name="dark_stroke">#374151</color>
+    
+    <!-- Missing colors for Light Mode -->
+    <color name="icon_tint">#888888</color>
+    
+    <!-- Timetable Grid Color (More Visible) -->
+    <color name="grid_line">#CBD5E1</color>
 </resources>
