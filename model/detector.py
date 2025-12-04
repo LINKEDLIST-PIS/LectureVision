@@ -3,10 +3,8 @@ import threading
 from ultralytics import YOLO
 from .config import DEVICE, CONF_THRESHOLD
 
-model = YOLO("runs/detect/train2/weights/best.pt").to(DEVICE)
+model = YOLO("runs/detect/train3/weights/best.pt").to(DEVICE)
 gpu_lock = threading.Lock()
-
-CONF_THRESHOLD = 0.38
 
 def detect_people(frame):
     with gpu_lock:
