@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TableLayout
+import android.widget.TableRow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -70,7 +72,7 @@ class HomeScreen : Fragment() {
             // [실제 로직 복구] 타이머 시작/중단 기능 연결
             val isRunning = homeViewModel.isTimerRunning.value ?: false
             if (isRunning) {
-                // 측정 중단: ViewModel의 stopTimer만 호출하면 모든 로직이 처리됨
+                // 측정 중단
                 homeViewModel.stopTimer()
             } else {
                 // 측정 시작
@@ -135,64 +137,143 @@ class HomeScreen : Fragment() {
     }
 
     private fun showComparisonDialog(startCount: Int, endCount: Int) {
-        // 1. 데이터 계산 (기존 로직 유지)
-        val totalStudent = getCurrentClassTotalStudents()
+        val context = requireContext()
 
+        // 1. 데이터 계산
+        val totalStudent = getCurrentClassTotalStudents()
         val totalDisplay = if (totalStudent > 0) "$totalStudent" else "-"
+        
         val startAbsent = if (totalStudent > 0) (totalStudent - startCount).coerceAtLeast(0) else 0
         val endAbsent = if (totalStudent > 0) (totalStudent - endCount).coerceAtLeast(0) else 0
 
-        // 인원 차이 계산 (예: +1, -1)
         val attendDiff = endCount - startCount
-        val attendDiffStr = if (attendDiff > 0) "(+${attendDiff})" else if (attendDiff < 0) "(${attendDiff})" else "(-)"
-
         val absentDiff = endAbsent - startAbsent
-        val absentDiffStr = if (absentDiff > 0) "(+${absentDiff})" else if (absentDiff < 0) "(${absentDiff})" else "(-)"
 
-        // 2. 메시지 구성 (SpannableString을 사용하여 스타일 적용)
-        val sb = StringBuilder()
-        sb.append("총 인원 : $totalDisplay\n\n")
-        sb.append("출석   시작 $startCount   →   종료 $endCount $attendDiffStr\n")
-        sb.append("결석   시작 $startAbsent   →   종료 $endAbsent $absentDiffStr")
-
-        val spannableString = android.text.SpannableString(sb.toString())
-
-        // "출석" 글자 진하게 (Bold)
-        val attendIndex = sb.indexOf("출석")
-        if (attendIndex != -1) {
-            spannableString.setSpan(
-                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-                attendIndex, attendIndex + 2,
-                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+        // 2. UI 구성 (Programmatic Layout)
+        val rootLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 50)
         }
 
-        // "결석" 글자 진하게 (Bold)
-        val absentIndex = sb.indexOf("결석")
-        if (absentIndex != -1) {
-            spannableString.setSpan(
-                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-                absentIndex, absentIndex + 2,
-                android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+        // 제목 아래 구분선
+        val titleDivider = View(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2).apply { bottomMargin = 40 }
+            setBackgroundColor(Color.parseColor("#E0E0E0"))
+        }
+        rootLayout.addView(titleDivider)
+
+        // 총 인원 표시
+        val totalText = TextView(context).apply {
+            text = "총 인원 : $totalDisplay"
+            textSize = 18f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = android.view.Gravity.CENTER
+            setTextColor(Color.BLACK)
+            setPadding(0, 0, 0, 40)
+        }
+        rootLayout.addView(totalText)
+
+        // --- TableLayout --- 
+        val tableLayout = TableLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            isStretchAllColumns = true
         }
 
-        // 3. 커스텀 TextView 생성 (글자 크기 키우기 위함)
-        val messageView = TextView(requireContext()).apply {
-            text = spannableString
-            textSize = 18f // 글자 크기 키움 (기본값보다 큼)
-            setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black))
-            setPadding(50, 30, 50, 30) // 여백 추가
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
+        // [Helper Functions]
+        fun createCell(text: CharSequence, isHeader: Boolean = false, isBold: Boolean = false): TextView {
+            return TextView(context).apply {
+                this.text = text
+                gravity = android.view.Gravity.CENTER
+                setPadding(10, 15, 10, 15)
+                textSize = if (isHeader) 14f else 16f
+                setTextColor(Color.BLACK)
+                if (isBold || isHeader) typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
         }
 
-        // 4. 다이얼로그 출력
-        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_Lecture_project_AlertDialog)
-            .setTitle("🔔 인원 측정 결과") // 제목에 아이콘 추가
-            .setView(messageView) // 커스텀 뷰 설정 (setMessage 대신 사용)
+        fun formatDiff(value: Int, diff: Int): CharSequence {
+            val sb = android.text.SpannableStringBuilder("$value")
+            if (diff != 0) {
+                val diffStr = if (diff > 0) " (+${diff})" else " (${diff})"
+                val color = if (diff > 0) Color.parseColor("#4CAF50") else Color.parseColor("#EF4444")
+                val span = android.text.SpannableString(diffStr).apply {
+                    setSpan(android.text.style.ForegroundColorSpan(color), 0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    setSpan(android.text.style.RelativeSizeSpan(0.85f), 0, length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                sb.append(span)
+            }
+            return sb
+        }
+
+        // [유지] 세로선 색상을 흰색으로
+        fun createVerticalDivider(): View {
+            return View(context).apply {
+                layoutParams = TableRow.LayoutParams(2, TableRow.LayoutParams.MATCH_PARENT)
+                setBackgroundColor(Color.WHITE)
+            }
+        }
+        
+        // [유지] 가로선 색상을 흰색으로
+        fun createHorizontalDividerRow(): TableRow {
+            return TableRow(context).apply {
+                val divider = View(context).apply {
+                    layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, 2).apply { span = 5 }
+                    setBackgroundColor(Color.WHITE)
+                }
+                addView(divider)
+            }
+        }
+
+        // 1행: 헤더 (상태 | 현재 인원 | 결석)
+        val rowHeader = TableRow(context).apply {
+            addView(createCell("상태", isHeader = true))
+            addView(createVerticalDivider())
+            addView(createCell("현재 인원", isHeader = true))
+            addView(createVerticalDivider())
+            addView(createCell("결석", isHeader = true))
+            setPadding(0, 0, 0, 10)
+        }
+        tableLayout.addView(rowHeader)
+
+        // 헤더 아래 가로선 (흰색)
+        tableLayout.addView(createHorizontalDividerRow())
+
+        // 2행: 시작 데이터
+        val rowStart = TableRow(context).apply {
+            addView(createCell("시작", isBold = true))
+            addView(createVerticalDivider())
+            addView(createCell("$startCount", isBold = true))
+            addView(createVerticalDivider())
+            addView(createCell("$startAbsent", isBold = true))
+        }
+        tableLayout.addView(rowStart)
+
+        // 3행: 화살표 아이콘
+        val rowArrow = TableRow(context).apply {
+            addView(createCell(""))
+            addView(createVerticalDivider())
+            addView(createCell("⬇️"))
+            addView(createVerticalDivider())
+            addView(createCell("⬇️"))
+        }
+        tableLayout.addView(rowArrow)
+
+        // 4행: 종료 데이터
+        val rowEnd = TableRow(context).apply {
+            addView(createCell("종료", isBold = true))
+            addView(createVerticalDivider())
+            addView(createCell(formatDiff(endCount, attendDiff), isBold = true))
+            addView(createVerticalDivider())
+            addView(createCell(formatDiff(endAbsent, absentDiff), isBold = true))
+        }
+        tableLayout.addView(rowEnd)
+
+        rootLayout.addView(tableLayout)
+
+        // 다이얼로그 출력
+        MaterialAlertDialogBuilder(context, R.style.Theme_Lecture_project_AlertDialog)
+            .setTitle("🔔 인원 측정 결과")
+            .setView(rootLayout)
             .setPositiveButton("확인", null)
             .show()
     }
