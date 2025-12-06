@@ -11,8 +11,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
     
-    <!-- 아이콘 틴트 등 -->
-    <color name="icon_tint">#9CA3AF</color>
+    <color name="icon_tint">@color/text_secondary</color>
 
     <!-- 기본 컬러 팔레트 -->
     <color name="btn_primary">#0ea5e9</color>

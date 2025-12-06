@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.tabs.TabLayout
+import com.son.lecture_project.data.model.ClassSchedule
 import com.son.lecture_project.data.model.Upload
 import com.son.lecture_project.databinding.ScreenRecordsBinding
 import com.son.lecture_project.ui.home.Result
@@ -19,6 +20,7 @@ import com.son.lecture_project.ui.records.RecordsAdapter
 import com.son.lecture_project.ui.records.RecordsViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
@@ -32,6 +34,10 @@ class RecordsScreen : Fragment() {
     
     private var allRecords: List<Upload> = emptyList()
     private var subjectList: List<String> = emptyList()
+
+    companion object {
+        private val KST: TimeZone = TimeZone.getTimeZone("Asia/Seoul")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -57,6 +63,7 @@ class RecordsScreen : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        // Refresh subject list in case it was changed in another screen
         recordsViewModel.loadSubjectList()
     }
 
@@ -115,11 +122,10 @@ class RecordsScreen : Fragment() {
         binding.spinnerDate.adapter = dateAdapter
         
         binding.spinnerClass.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                // Spinner selection changes will trigger filter via button or we could trigger here
-                // Currently triggered by Search button
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                // User must press search to filter
             }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+            override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         binding.btnSearch.setOnClickListener {
@@ -149,8 +155,7 @@ class RecordsScreen : Fragment() {
                 is Result.Error -> {
                     binding.progressBar.visibility = View.GONE
                     allRecords = emptyList()
-                    filterAndShowRecords()
-                    updateStats(emptyList())
+                    filterAndShowRecords() // Show empty list
                     
                     val errorMsg = result.exception.message ?: "Unknown Error"
                     Log.e("RecordsScreen", "Records load error: $errorMsg")
@@ -174,12 +179,21 @@ class RecordsScreen : Fragment() {
             
             this.subjectList = subjects
             
+            val currentSelection = binding.spinnerClass.selectedItem as? String
             val classAdapter = ArrayAdapter(ctx, android.R.layout.simple_spinner_item, filterList)
             classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.spinnerClass.adapter = classAdapter
 
+            if (currentSelection != null) {
+                val newPosition = filterList.indexOf(currentSelection)
+                if (newPosition >= 0) {
+                    binding.spinnerClass.setSelection(newPosition)
+                }
+            }
+
             if (::recordsAdapter.isInitialized) {
-                recordsAdapter.updateTotalCountMap(recordsViewModel.getSubjectTotalCountMap())
+                recordsAdapter.updateSchedules(recordsViewModel.getAllSchedules())
+                recordsAdapter.updateColorMap(recordsViewModel.getSubjectColorMap())
             }
             
             if (allRecords.isNotEmpty()) {
@@ -191,9 +205,46 @@ class RecordsScreen : Fragment() {
     private fun updateStats(records: List<Upload>) {
         if (_binding == null || !isAdded) return
         try {
-            val subjectTotalCountMap = recordsViewModel.getSubjectTotalCountMap()
+            val allSchedules = recordsViewModel.getAllSchedules()
 
-            if (records.isEmpty()) {
+            if (records.isNotEmpty() && allSchedules.isEmpty()) {
+                Log.w("RecordsScreen", "Stats calculation skipped: schedule data not ready.")
+                return
+            }
+
+            val parsers = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+            )
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val sessionKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { timeZone = KST }
+
+            // Group records by session (course + day) and get the latest upload for each.
+            val finalRecordsForStats = records
+                .mapNotNull { record ->
+                    val recordDate = parseDate(record.uploadedAt, parsers) ?: return@mapNotNull null
+                    val cal = Calendar.getInstance(KST).apply { time = recordDate }
+                    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                    if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                        return@mapNotNull null
+                    }
+                    val dayName = getDayName(dayOfWeek)
+                    val matchingSchedule = findMatchingSchedule(recordDate, dayName, allSchedules, timeFormat)
+                    
+                    if (matchingSchedule == null) {
+                        null
+                    } else {
+                        val sessionDateStr = sessionKeyFormat.format(recordDate)
+                        val sessionKey = "${matchingSchedule.name}_${sessionDateStr}"
+                        Triple(sessionKey, recordDate, record)
+                    }
+                }
+                .groupBy { it.first }
+                .map { (_, triples) ->
+                    triples.maxByOrNull { it.second }!!.third
+                }
+
+            if (finalRecordsForStats.isEmpty()) {
                 binding.tvRatePresent.text = "0%"
                 binding.tvRateAbsent.text = "0%"
                 resetTop3()
@@ -204,51 +255,40 @@ class RecordsScreen : Fragment() {
             var totalPossible = 0
             var totalPresent = 0
             
-            // map: subjectName -> Pair(totalPossible, totalAbsent)
-            val subjectStatsMap = mutableMapOf<String, Pair<Int, Int>>() 
-            
+            val subjectStatsMap = mutableMapOf<String, Pair<Int, Int>>()
             val dayPresentCounts = IntArray(5)
             val dayAbsentCounts = IntArray(5)
-            
-            val parsers = listOf(
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            )
-            val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
 
-            records.forEach { record ->
-                val courseName = record.originalName ?: ""
-                val maxStudents = subjectTotalCountMap[courseName] ?: 0
+            finalRecordsForStats.forEach { record ->
+                val recordDate = parseDate(record.uploadedAt, parsers) ?: return@forEach
+                val cal = Calendar.getInstance(KST).apply { time = recordDate }
                 
-                if (maxStudents > 0) {
-                    val present = record.peopleCount
-                    val absent = (maxStudents - present).coerceAtLeast(0)
-                    
-                    totalPossible += maxStudents
-                    totalPresent += present
-                    
-                    val currentStat = subjectStatsMap.getOrDefault(courseName, 0 to 0)
-                    subjectStatsMap[courseName] = (currentStat.first + maxStudents) to (currentStat.second + absent)
+                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                    return@forEach
+                }
 
-                    val dateStr = record.uploadedAt
-                    if (!dateStr.isNullOrEmpty()) {
-                        val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
-                        for (sdf in parsers) {
-                            try {
-                                val date = sdf.parse(cleanDateStr)
-                                if (date != null) {
-                                    cal.time = date
-                                    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                                    if (dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY) {
-                                        val index = dayOfWeek - Calendar.MONDAY
-                                        if (index in 0..4) {
-                                            dayPresentCounts[index] += present
-                                            dayAbsentCounts[index] += absent
-                                        }
-                                    }
-                                    break 
-                                }
-                            } catch (e: Exception) { /* ignore */ }
+                val dayName = getDayName(dayOfWeek)
+                val matchingSchedule = findMatchingSchedule(recordDate, dayName, allSchedules, timeFormat)
+
+                if (matchingSchedule != null) {
+                    val courseName = matchingSchedule.name
+                    val maxStudents = matchingSchedule.totalStudents
+
+                    if (maxStudents > 0) {
+                        val present = record.peopleCount
+                        val absent = (maxStudents - present).coerceAtLeast(0)
+
+                        totalPossible += maxStudents
+                        totalPresent += present
+
+                        val currentStat = subjectStatsMap.getOrDefault(courseName, 0 to 0)
+                        subjectStatsMap[courseName] = (currentStat.first + maxStudents) to (currentStat.second + absent)
+
+                        if (dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY) {
+                            val index = dayOfWeek - Calendar.MONDAY
+                            dayPresentCounts[index] += present
+                            dayAbsentCounts[index] += absent
                         }
                     }
                 }
@@ -260,7 +300,6 @@ class RecordsScreen : Fragment() {
             binding.tvRatePresent.text = String.format(Locale.getDefault(), "%.1f%%", attendanceRate)
             binding.tvRateAbsent.text = String.format(Locale.getDefault(), "%.1f%%", absenceRate)
 
-            // Top 3 Calculation
             val sortedStats = subjectStatsMap.map { (name, stats) ->
                 val (sTotal, sAbsent) = stats
                 val sRate = if (sTotal > 0) (sAbsent.toDouble() / sTotal * 100) else 0.0
@@ -280,6 +319,62 @@ class RecordsScreen : Fragment() {
 
         } catch (e: Exception) {
             Log.e("RecordsScreen", "Error updating stats", e)
+        }
+    }
+
+    private fun parseDate(dateStr: String?, parsers: List<SimpleDateFormat>): Date? {
+        if (dateStr.isNullOrEmpty()) return null
+        val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
+        for (sdf in parsers) {
+            try {
+                sdf.timeZone = KST
+                return sdf.parse(cleanDateStr)
+            } catch (e: Exception) { /* ignore */ }
+        }
+        return null
+    }
+
+    private fun getDayName(dayOfWeek: Int): String {
+        return when (dayOfWeek) {
+            Calendar.SUNDAY -> "일"
+            Calendar.MONDAY -> "월"
+            Calendar.TUESDAY -> "화"
+            Calendar.WEDNESDAY -> "수"
+            Calendar.THURSDAY -> "목"
+            Calendar.FRIDAY -> "금"
+            Calendar.SATURDAY -> "토"
+            else -> ""
+        }
+    }
+
+    private fun findMatchingSchedule(recordDate: Date, dayName: String, schedules: List<ClassSchedule>, timeFormat: SimpleDateFormat): ClassSchedule? {
+        try {
+            timeFormat.timeZone = KST
+            val recordTime = timeFormat.parse(timeFormat.format(recordDate)) ?: return null
+
+            val matchingSchedules = schedules.filter { schedule ->
+                schedule.day.contains(dayName) && try {
+                    val startTime = timeFormat.parse(schedule.startTime) ?: return@filter false
+                    val endTime = timeFormat.parse(schedule.endTime) ?: return@filter false
+                    !recordTime.before(startTime) && recordTime.before(endTime)
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            // If there are multiple candidates, pick the one with the longest duration.
+            return matchingSchedules.maxByOrNull { schedule ->
+                try {
+                    val startTime = timeFormat.parse(schedule.startTime)?.time ?: -1
+                    val endTime = timeFormat.parse(schedule.endTime)?.time ?: -1
+                    if (startTime == -1L || endTime == -1L) Long.MIN_VALUE else endTime - startTime
+                } catch (e: Exception) {
+                    Long.MIN_VALUE
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("RecordsScreen", "Error in findMatchingSchedule", e)
+            return null
         }
     }
 
@@ -360,6 +455,8 @@ class RecordsScreen : Fragment() {
         try {
             if (!::recordsAdapter.isInitialized) return 
 
+            recordsAdapter.updateSchedules(recordsViewModel.getAllSchedules())
+
             val selectedDateFilter = binding.spinnerDate.selectedItemPosition
             val selectedSubject = binding.spinnerClass.selectedItem as? String
             
@@ -367,7 +464,7 @@ class RecordsScreen : Fragment() {
             val isAllSubjects = selectedSubject == allSubjectsString || selectedSubject == null
 
             val thresholdDate = if (selectedDateFilter == 0) null else {
-                Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul")).apply {
+                Calendar.getInstance(KST).apply {
                     set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
                     set(Calendar.SECOND, 0)
@@ -388,35 +485,30 @@ class RecordsScreen : Fragment() {
                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             )
 
-            val filteredList = allRecords.filter { record ->
-                val dateMatch = thresholdDate == null || try {
-                    var parsedDate: java.util.Date? = null
-                    val dateStr = record.uploadedAt
-                    
-                    if (!dateStr.isNullOrEmpty()) {
-                        val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
-                        for (sdf in parsers) {
-                            try {
-                                parsedDate = sdf.parse(cleanDateStr)
-                                if (parsedDate != null) break
-                            } catch (e: Exception) { /* ignore */ }
-                        }
-                    }
-                    
-                    if (parsedDate != null) {
-                        parsedDate.after(thresholdDate)
-                    } else {
-                        false
-                    }
-                } catch (e: Exception) { false }
+            val filteredRecords = allRecords.filter { record ->
+                val recordDate = parseDate(record.uploadedAt, parsers) ?: return@filter false
 
-                val subjectMatch = isAllSubjects || (record.originalName ?: "") == selectedSubject
+                val cal = Calendar.getInstance(KST).apply { time = recordDate }
+                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                    return@filter false // Exclude weekends from list view
+                }
+
+                val dateMatch = thresholdDate == null || recordDate.after(thresholdDate)
+
+                val subjectMatch = if (isAllSubjects) {
+                    true
+                } else {
+                    val dayName = getDayName(dayOfWeek)
+                    val matchingSchedule = findMatchingSchedule(recordDate, dayName, recordsViewModel.getAllSchedules(), SimpleDateFormat("HH:mm", Locale.getDefault()))
+                    matchingSchedule?.name == selectedSubject
+                }
                 
                 dateMatch && subjectMatch
             }
             
-            updateRecordList(filteredList)
-            updateStats(filteredList)
+            updateRecordList(filteredRecords)
+            updateStats(filteredRecords)
         } catch (e: Exception) {
             Log.e("RecordsScreen", "Error filtering records", e)
         }
@@ -424,12 +516,6 @@ class RecordsScreen : Fragment() {
 
     private fun updateRecordList(records: List<Upload>) {
         if (_binding == null || !isAdded) return
-        
-        val totalCountStr = context?.getString(R.string.records_total_count, records.size) ?: "총 ${records.size}개의 기록"
-        binding.tvSummary.text = totalCountStr
-        
-        binding.rvRecords.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
-        binding.layoutEmpty.visibility = if (records.isEmpty()) View.VISIBLE else View.GONE
         
         recordsAdapter.submitList(records)
     }

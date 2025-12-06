@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-
     <!-- 1. 기본적으로는 http 통신(일반 텍스트 트래픽)을 허용 (내부망 IP 대역 등을 위해) -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
@@ -9,10 +8,7 @@
     </base-config>
 
     <!-- 2. 특정 외부 도메인에 대해서만 예외적으로 https 강제 -->
-    <domain-config cleartextTrafficPermitted="true">
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">cm838.myasustor.com</domain>
-        <domain>192.168.0.15</domain>
-        <domain>192.168.50.50</domain>
     </domain-config>
-
 </network-security-config>

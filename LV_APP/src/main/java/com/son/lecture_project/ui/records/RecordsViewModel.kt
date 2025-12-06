@@ -71,6 +71,11 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
     fun getSchedulesForSubject(subjectName: String): List<ClassSchedule> {
         return cachedSchedules.filter { it.name == subjectName }
     }
+    
+    // [NEW] 전체 시간표 목록 반환
+    fun getAllSchedules(): List<ClassSchedule> {
+        return cachedSchedules
+    }
 
     // 과목별 총 인원수 맵 반환
     fun getSubjectTotalCountMap(): Map<String, Int> {
