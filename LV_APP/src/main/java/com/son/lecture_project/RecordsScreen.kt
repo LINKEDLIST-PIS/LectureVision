@@ -39,6 +39,20 @@ class RecordsScreen : Fragment() {
         private val KST: TimeZone = TimeZone.getTimeZone("Asia/Seoul")
     }
 
+    // [리팩토링] 출석 데이터 처리용 데이터 클래스
+    private data class AttendanceLog(
+        val className: String,
+        val sessionDate: String, // "yyyy-MM-dd"
+        val timestamp: Date,     // 실제 측정 시간 (최신 데이터 판별용)
+        val present: Int,
+        val total: Int,
+        val dayIndex: Int        // 0=월, 1=화, ..., 6=일
+    ) {
+        // 0~100 범위로 제한된 출석률
+        val attendanceRate: Double
+            get() = if (total > 0) (present.toDouble() / total * 100.0).coerceIn(0.0, 100.0) else 0.0
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -63,7 +77,6 @@ class RecordsScreen : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh subject list in case it was changed in another screen
         recordsViewModel.loadSubjectList()
     }
 
@@ -121,12 +134,15 @@ class RecordsScreen : Fragment() {
         dateAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerDate.adapter = dateAdapter
         
-        binding.spinnerClass.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        val dummyListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                // User must press search to filter
+                // Do nothing, wait for Search button click
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
+
+        binding.spinnerClass.onItemSelectedListener = dummyListener
+        binding.spinnerDate.onItemSelectedListener = dummyListener
 
         binding.btnSearch.setOnClickListener {
             if (_binding != null && isAdded) {
@@ -155,7 +171,7 @@ class RecordsScreen : Fragment() {
                 is Result.Error -> {
                     binding.progressBar.visibility = View.GONE
                     allRecords = emptyList()
-                    filterAndShowRecords() // Show empty list
+                    filterAndShowRecords()
                     
                     val errorMsg = result.exception.message ?: "Unknown Error"
                     Log.e("RecordsScreen", "Records load error: $errorMsg")
@@ -201,116 +217,128 @@ class RecordsScreen : Fragment() {
             }
         }
     }
-    
+
+    /**
+     * [리팩토링] 통계 계산 로직 통합 함수
+     */
     private fun updateStats(records: List<Upload>) {
         if (_binding == null || !isAdded) return
         try {
-            val allSchedules = recordsViewModel.getAllSchedules()
-
-            if (records.isNotEmpty() && allSchedules.isEmpty()) {
-                Log.w("RecordsScreen", "Stats calculation skipped: schedule data not ready.")
+            // 1. 데이터가 없으면 초기화 후 종료
+            if (records.isEmpty()) {
+                resetStatsUI()
                 return
             }
 
+            // 파서 준비
             val parsers = listOf(
                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
                 SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             )
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            val sessionKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { timeZone = KST }
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault()).apply { timeZone = KST }
+            val sessionDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply { timeZone = KST }
+            
+            val allSchedules = recordsViewModel.getAllSchedules()
 
-            // Group records by session (course + day) and get the latest upload for each.
-            val finalRecordsForStats = records
-                .mapNotNull { record ->
-                    val recordDate = parseDate(record.uploadedAt, parsers) ?: return@mapNotNull null
-                    val cal = Calendar.getInstance(KST).apply { time = recordDate }
-                    val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                    if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
-                        return@mapNotNull null
-                    }
-                    val dayName = getDayName(dayOfWeek)
-                    val matchingSchedule = findMatchingSchedule(recordDate, dayName, allSchedules, timeFormat)
+            // 2. Raw Data -> Valid Log Candidates 매핑
+            val candidates = records.mapNotNull { record ->
+                val recordDate = parseDate(record.uploadedAt, parsers) ?: return@mapNotNull null
+                
+                // 주말 체크 (토=7, 일=1) - 아예 제외
+                val cal = Calendar.getInstance(KST).apply { time = recordDate }
+                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                    return@mapNotNull null
+                }
+                
+                // 스케줄 매칭
+                val matchedSchedule = if (allSchedules.any { it.name == record.originalName }) {
+                    allSchedules.find { it.name == record.originalName }
+                } else {
+                    val dayName = getDayName(dayOfWeek) 
+                    findMatchingSchedule(recordDate, dayName, allSchedules, timeFormat)
+                }
+
+                if (matchedSchedule == null || matchedSchedule.totalStudents <= 0) {
+                    null // 매칭 안되거나 정원이 0인 경우 제외
+                } else {
+                    // 요일 인덱스 계산 (월=0, ..., 금=4)
+                    // Calendar.MONDAY=2 -> 0
+                    val dayIndex = dayOfWeek - Calendar.MONDAY
                     
-                    if (matchingSchedule == null) {
-                        null
-                    } else {
-                        val sessionDateStr = sessionKeyFormat.format(recordDate)
-                        val sessionKey = "${matchingSchedule.name}_${sessionDateStr}"
-                        Triple(sessionKey, recordDate, record)
-                    }
+                    // 세션 키 생성 (과목명 + 날짜) -> 같은 날짜 같은 과목 구분
+                    val sessionDate = sessionDateFormat.format(recordDate)
+                    
+                    AttendanceLog(
+                        className = matchedSchedule.name,
+                        sessionDate = sessionDate,
+                        timestamp = recordDate,
+                        present = record.peopleCount,
+                        total = matchedSchedule.totalStudents,
+                        dayIndex = dayIndex
+                    )
                 }
-                .groupBy { it.first }
-                .map { (_, triples) ->
-                    triples.maxByOrNull { it.second }!!.third
+            }
+
+            // 3. [핵심] 같은 날짜+과목에 대해 '가장 마지막' 측정값만 선택
+            val uniqueLogs = candidates
+                .groupBy { "${it.className}_${it.sessionDate}" }
+                .map { (_, logs) ->
+                    // timestamp가 가장 늦은 기록 선택
+                    logs.maxByOrNull { it.timestamp.time }!!
                 }
 
-            if (finalRecordsForStats.isEmpty()) {
-                binding.tvRatePresent.text = "0%"
-                binding.tvRateAbsent.text = "0%"
-                resetTop3()
-                resetBarChart()
+            if (uniqueLogs.isEmpty()) {
+                resetStatsUI()
                 return
             }
 
-            var totalPossible = 0
-            var totalPresent = 0
-            
-            val subjectStatsMap = mutableMapOf<String, Pair<Int, Int>>()
-            val dayPresentCounts = IntArray(5)
-            val dayAbsentCounts = IntArray(5)
+            // 디버깅 로그
+            Log.d("StatsLogic", "Original Records: ${records.size}, Candidates: ${candidates.size}, Unique Sessions: ${uniqueLogs.size}")
 
-            finalRecordsForStats.forEach { record ->
-                val recordDate = parseDate(record.uploadedAt, parsers) ?: return@forEach
-                val cal = Calendar.getInstance(KST).apply { time = recordDate }
-                
-                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
-                    return@forEach
+            // 4. 전체 통계 계산 (평균 방식)
+            // 출석률 = (각 세션의 출석률 합) / 세션 수
+            val overallAttendanceRate = uniqueLogs.map { it.attendanceRate }.average()
+            // 결석률 = 100 - 출석률
+            val overallAbsenceRate = 100.0 - overallAttendanceRate
+
+            // UI 적용 (0~100 범위 제한 및 소수점 포맷팅)
+            binding.tvRatePresent.text = String.format(Locale.getDefault(), "%.1f%%", overallAttendanceRate.coerceIn(0.0, 100.0))
+            binding.tvRateAbsent.text = String.format(Locale.getDefault(), "%.1f%%", overallAbsenceRate.coerceIn(0.0, 100.0))
+
+
+            // 5. 과목별 결석률 상위 3 (평균 방식)
+            val subjectStats = uniqueLogs
+                .groupBy { it.className }
+                .map { (name, logs) ->
+                    val avgAttendance = logs.map { it.attendanceRate }.average()
+                    val avgAbsence = 100.0 - avgAttendance
+                    name to avgAbsence
                 }
+                .sortedByDescending { it.second } // 결석률 높은 순
 
-                val dayName = getDayName(dayOfWeek)
-                val matchingSchedule = findMatchingSchedule(recordDate, dayName, allSchedules, timeFormat)
+            updateTop3(subjectStats)
 
-                if (matchingSchedule != null) {
-                    val courseName = matchingSchedule.name
-                    val maxStudents = matchingSchedule.totalStudents
 
-                    if (maxStudents > 0) {
-                        val present = record.peopleCount
-                        val absent = (maxStudents - present).coerceAtLeast(0)
+            // 6. 요일별 통계 (월~금)
+            // 차트에는 '누적 인원'을 표시하여 시각적 볼륨감을 줌 (최종 선택된 데이터 기준)
+            val dayPresentCounts = IntArray(5) { 0 }
+            val dayAbsentCounts = IntArray(5) { 0 }
 
-                        totalPossible += maxStudents
-                        totalPresent += present
-
-                        val currentStat = subjectStatsMap.getOrDefault(courseName, 0 to 0)
-                        subjectStatsMap[courseName] = (currentStat.first + maxStudents) to (currentStat.second + absent)
-
-                        if (dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY) {
-                            val index = dayOfWeek - Calendar.MONDAY
-                            dayPresentCounts[index] += present
-                            dayAbsentCounts[index] += absent
-                        }
-                    }
+            uniqueLogs.forEach { log ->
+                if (log.dayIndex in 0..4) { // 월~금 확인
+                    // 인원 수 보정 (음수 방지, 정원 초과 방지)
+                    val validPresent = log.present.coerceIn(0, log.total)
+                    val validAbsent = log.total - validPresent
+                    
+                    dayPresentCounts[log.dayIndex] += validPresent
+                    dayAbsentCounts[log.dayIndex] += validAbsent
                 }
             }
-            
-            val attendanceRate = if (totalPossible > 0) (totalPresent.toDouble() / totalPossible * 100) else 0.0
-            val absenceRate = if (totalPossible > 0) ((totalPossible - totalPresent).toDouble() / totalPossible * 100) else 0.0
-            
-            binding.tvRatePresent.text = String.format(Locale.getDefault(), "%.1f%%", attendanceRate)
-            binding.tvRateAbsent.text = String.format(Locale.getDefault(), "%.1f%%", absenceRate)
-
-            val sortedStats = subjectStatsMap.map { (name, stats) ->
-                val (sTotal, sAbsent) = stats
-                val sRate = if (sTotal > 0) (sAbsent.toDouble() / sTotal * 100) else 0.0
-                name to sRate
-            }.sortedByDescending { it.second }
-
-            updateTop3(sortedStats)
 
             val maxDailyTotal = (0..4).maxOfOrNull { dayPresentCounts[it] + dayAbsentCounts[it] } ?: 0
             val finalMax = if (maxDailyTotal > 0) maxDailyTotal else 1
-            
+
             updateDayBar(binding.viewBarMonPresent, binding.viewBarMonAbsent, dayPresentCounts[0], dayAbsentCounts[0], finalMax)
             updateDayBar(binding.viewBarTuePresent, binding.viewBarTueAbsent, dayPresentCounts[1], dayAbsentCounts[1], finalMax)
             updateDayBar(binding.viewBarWedPresent, binding.viewBarWedAbsent, dayPresentCounts[2], dayAbsentCounts[2], finalMax)
@@ -319,7 +347,15 @@ class RecordsScreen : Fragment() {
 
         } catch (e: Exception) {
             Log.e("RecordsScreen", "Error updating stats", e)
+            resetStatsUI()
         }
+    }
+
+    private fun resetStatsUI() {
+        binding.tvRatePresent.text = "0.0%"
+        binding.tvRateAbsent.text = "0.0%"
+        resetTop3()
+        resetBarChart()
     }
 
     private fun parseDate(dateStr: String?, parsers: List<SimpleDateFormat>): Date? {
@@ -327,7 +363,7 @@ class RecordsScreen : Fragment() {
         val cleanDateStr = if (dateStr.contains(".")) dateStr.substringBefore(".") else dateStr
         for (sdf in parsers) {
             try {
-                sdf.timeZone = KST
+                sdf.timeZone = TimeZone.getTimeZone("UTC")
                 return sdf.parse(cleanDateStr)
             } catch (e: Exception) { /* ignore */ }
         }
@@ -349,27 +385,24 @@ class RecordsScreen : Fragment() {
 
     private fun findMatchingSchedule(recordDate: Date, dayName: String, schedules: List<ClassSchedule>, timeFormat: SimpleDateFormat): ClassSchedule? {
         try {
+            // [중요] 시간 비교 시 KST 타임존 필수 설정
             timeFormat.timeZone = KST
-            val recordTime = timeFormat.parse(timeFormat.format(recordDate)) ?: return null
 
-            val matchingSchedules = schedules.filter { schedule ->
+            // recordDate에서 날짜 정보를 제거하고 '시간'만 남김 (예: "14:30")
+            val recordTimeStr = timeFormat.format(recordDate)
+            val recordTime = timeFormat.parse(recordTimeStr) ?: return null
+
+            // 조건에 맞는 스케줄을 찾아 반환 (find 사용으로 성능 최적화)
+            return schedules.find { schedule ->
+                // 1. 요일 이름("월", "화" 등)이 포함되어 있는지 확인
                 schedule.day.contains(dayName) && try {
-                    val startTime = timeFormat.parse(schedule.startTime) ?: return@filter false
-                    val endTime = timeFormat.parse(schedule.endTime) ?: return@filter false
+                    val startTime = timeFormat.parse(schedule.startTime) ?: return@find false
+                    val endTime = timeFormat.parse(schedule.endTime) ?: return@find false
+
+                    // 2. 기록된 시간이 수업 시간 범위 내인지 확인 (시작 <= 기록 < 종료)
                     !recordTime.before(startTime) && recordTime.before(endTime)
                 } catch (e: Exception) {
                     false
-                }
-            }
-
-            // If there are multiple candidates, pick the one with the longest duration.
-            return matchingSchedules.maxByOrNull { schedule ->
-                try {
-                    val startTime = timeFormat.parse(schedule.startTime)?.time ?: -1
-                    val endTime = timeFormat.parse(schedule.endTime)?.time ?: -1
-                    if (startTime == -1L || endTime == -1L) Long.MIN_VALUE else endTime - startTime
-                } catch (e: Exception) {
-                    Long.MIN_VALUE
                 }
             }
         } catch (e: Exception) {
@@ -456,6 +489,7 @@ class RecordsScreen : Fragment() {
             if (!::recordsAdapter.isInitialized) return 
 
             recordsAdapter.updateSchedules(recordsViewModel.getAllSchedules())
+            recordsAdapter.updateColorMap(recordsViewModel.getSubjectColorMap())
 
             val selectedDateFilter = binding.spinnerDate.selectedItemPosition
             val selectedSubject = binding.spinnerClass.selectedItem as? String
@@ -488,20 +522,24 @@ class RecordsScreen : Fragment() {
             val filteredRecords = allRecords.filter { record ->
                 val recordDate = parseDate(record.uploadedAt, parsers) ?: return@filter false
 
+                // [중요] 토/일 데이터 원천 차단
                 val cal = Calendar.getInstance(KST).apply { time = recordDate }
                 val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
-                    return@filter false // Exclude weekends from list view
-                }
+                if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) return@filter false
 
-                val dateMatch = thresholdDate == null || recordDate.after(thresholdDate)
+                val dateMatch = thresholdDate == null || !recordDate.before(thresholdDate)
 
                 val subjectMatch = if (isAllSubjects) {
                     true
                 } else {
-                    val dayName = getDayName(dayOfWeek)
-                    val matchingSchedule = findMatchingSchedule(recordDate, dayName, recordsViewModel.getAllSchedules(), SimpleDateFormat("HH:mm", Locale.getDefault()))
-                    matchingSchedule?.name == selectedSubject
+                    val nameToCheck = record.originalName ?: ""
+                    if (nameToCheck.isNotEmpty() && nameToCheck != "photo.jpg" && !nameToCheck.startsWith("photo_")) {
+                         nameToCheck == selectedSubject
+                    } else {
+                        val dayName = getDayName(dayOfWeek)
+                        val matchingSchedule = findMatchingSchedule(recordDate, dayName, recordsViewModel.getAllSchedules(), SimpleDateFormat("HH:mm", Locale.getDefault()))
+                        matchingSchedule?.name == selectedSubject
+                    }
                 }
                 
                 dateMatch && subjectMatch
