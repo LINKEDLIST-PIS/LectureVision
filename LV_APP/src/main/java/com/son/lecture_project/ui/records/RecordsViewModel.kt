@@ -39,7 +39,6 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _records.value = Result.Loading
             try {
-                // [Fix] TokenManager는 object이므로 init 후 정적 메서드로 접근
                 TokenManager.init(getApplication())
                 val token = TokenManager.getToken()
                 
@@ -48,22 +47,19 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
                     return@launch
                 }
 
-                // 실제 API 호출
-                val response = RetrofitClient.instance.getUploads(token)
+                val response = RetrofitClient.recordApiService.getRecords()
                 
                 if (response.isSuccessful && response.body() != null) {
                     val uploads = response.body()!!
                     
-                    // 시간표 데이터 로드 (매칭을 위해 필요)
                     if (cachedSchedules.isEmpty()) {
                         cachedSchedules = getLocalSchedules()
                     }
 
-                    // 서버 데이터 보정 (originalName이 없거나 불명확할 경우 시간표 기반 매칭)
                     val processedRecords = uploads.map { record ->
                         val matchedSubject = findSubjectByTime(record.uploadedAt, cachedSchedules)
-                        // originalName이 비어있거나 기본 파일명인 경우 매칭된 과목명으로 대체
-                        if (matchedSubject != null && (record.originalName.isNullOrEmpty() || record.originalName!!.startsWith("photo"))) {
+                        // [FIX] Always update originalName if a subject is matched by time
+                        if (matchedSubject != null) {
                             record.copy(originalName = matchedSubject)
                         } else {
                             record
@@ -79,24 +75,25 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    // [Helper] 타임스탬프를 기반으로 시간표에서 과목 찾기
     private fun findSubjectByTime(uploadedAt: String?, schedules: List<ClassSchedule>): String? {
         if (uploadedAt == null) return null
         
         try {
-            // 1. 날짜 파싱 (UTC -> Date)
-            val cleanDate = uploadedAt.replace("Z", "")
+            val cleanDate = uploadedAt.replace("Z", "").substringBefore(".")
             val format = if (cleanDate.contains("T")) "yyyy-MM-dd'T'HH:mm:ss" else "yyyy-MM-dd HH:mm:ss"
             
             val parser = SimpleDateFormat(format, Locale.getDefault())
             parser.timeZone = TimeZone.getTimeZone("UTC") 
             val date = parser.parse(cleanDate) ?: return null
             
-            // 2. KST 기준으로 요일 및 시간 확인
             val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Seoul"))
             cal.time = date
             
             val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+            
+            if (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY) {
+                return null
+            }
             
             val dayString = when (dayOfWeek) {
                 Calendar.MONDAY -> "월"
@@ -104,8 +101,6 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
                 Calendar.WEDNESDAY -> "수"
                 Calendar.THURSDAY -> "목"
                 Calendar.FRIDAY -> "금"
-                Calendar.SATURDAY -> "토"
-                Calendar.SUNDAY -> "일"
                 else -> ""
             }
 
@@ -113,14 +108,14 @@ class RecordsViewModel(application: Application) : AndroidViewModel(application)
             timeFormat.timeZone = TimeZone.getTimeZone("Asia/Seoul")
             val recordTimeStr = timeFormat.format(date)
             
-            // 3. 매칭 (시간 충돌 해결: Start <= Time < End)
             val matchedSchedule = schedules.find { schedule ->
-                if (!schedule.day.contains(dayString)) return@find false
-                
-                val start = schedule.startTime ?: "00:00"
-                val end = schedule.endTime ?: "23:59"
-                
-                recordTimeStr >= start && recordTimeStr < end
+                schedule.day.contains(dayString) && try {
+                    val start = schedule.startTime ?: "00:00"
+                    val end = schedule.endTime ?: "23:59"
+                    recordTimeStr >= start && recordTimeStr < end
+                } catch (e: Exception) {
+                    false
+                }
             }
             
             return matchedSchedule?.name

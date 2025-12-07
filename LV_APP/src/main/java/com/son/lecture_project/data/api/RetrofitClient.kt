@@ -1,6 +1,7 @@
 package com.son.lecture_project.data.api
 
 import com.son.lecture_project.data.local.TokenManager
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -11,9 +12,25 @@ object RetrofitClient {
     // 기본 모델 서버 주소
     private const val DEFAULT_MODEL_SERVER_URL = "http://cm838.myasustor.com:8000/"
 
+    // Interceptor for adding the auth token
+    private val authInterceptor = okhttp3.Interceptor { chain ->
+        val token = TokenManager.getToken()
+        val requestBuilder = chain.request().newBuilder()
+        if (!token.isNullOrEmpty()) {
+            requestBuilder.addHeader("Authorization", "Bearer $token")
+        }
+        chain.proceed(requestBuilder.build())
+    }
+
+    // OkHttpClient with the interceptor
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor)
+        .build()
+
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(okHttpClient) // Set the custom OkHttpClient
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
