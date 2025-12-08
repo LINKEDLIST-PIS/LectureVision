@@ -45,13 +45,12 @@ class SignupActivity : AppCompatActivity() {
         }
 
         binding.buttonSignup.setOnClickListener {
-            val name = binding.editSignupName.text.toString().trim()
             val email = binding.editSignupEmail.text.toString().trim()
             val password = binding.editSignupPassword.text.toString().trim()
             val passwordConfirm = binding.editSignupPasswordConfirm.text.toString().trim()
 
-            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "이름, 이메일, 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "이메일, 비밀번호를 모두 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -76,8 +75,8 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Call signup with Name
-            signupViewModel.signup(email, password, name)
+            // Call signup
+            signupViewModel.signup(email, password)
         }
 
         // 로그인 화면으로 이동 (Link)
